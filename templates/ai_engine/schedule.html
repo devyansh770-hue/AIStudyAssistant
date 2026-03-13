@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Study Schedule — {{ course.name }}{% endblock %}
+{% block page_title %}AI Study Schedule{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-calendar3 text-success"></i> {{ course.name }}</h6>
+      <p class="text-muted small mb-1">Exam Date</p>
+      <p class="fw-semibold text-danger">{{ course.exam_date }}</p>
+      <p class="text-muted small mb-1">Days Remaining</p>
+      <p class="fw-bold text-danger" style="font-size:1.5rem">{{ course.days_until_exam }}</p>
+      <p class="text-muted small mb-1">Topics</p>
+      <p class="text-dark">{{ course.topics }}</p>
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ai w-100 mt-2">
+          <i class="bi bi-robot"></i> Generate AI Schedule
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    {% if schedule %}
+      <div class="card p-3">
+        <h6 class="fw-bold mb-3">Your Personalized Study Plan</h6>
+        {% for day in schedule %}
+        <div class="d-flex gap-3 p-3 rounded mb-2" style="background:{% cycle '#e3f2fd' '#f3e5f5' '#e8f5e9' '#fff3e0' %}">
+          <div class="text-center" style="min-width:50px">
+            <div class="fw-bold text-primary">Day</div>
+            <div class="fw-bold" style="font-size:1.3rem">{{ day.day }}</div>
+          </div>
+          <div class="flex-grow-1">
+            <div class="fw-semibold">{{ day.topic }}</div>
+            <ul class="mb-1 mt-1 ps-3">
+              {% for task in day.tasks %}<li class="small text-muted">{{ task }}</li>{% endfor %}
+            </ul>
+            {% if day.tip %}
+            <div class="small text-success"><i class="bi bi-lightbulb"></i> {{ day.tip }}</div>
+            {% endif %}
+          </div>
+          <div class="text-end" style="min-width:70px">
+            <span class="badge bg-primary">{{ day.duration_hours }}h</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card p-5 text-center">
+        <i class="bi bi-calendar-plus text-muted" style="font-size:3rem"></i>
+        <p class="text-muted mt-3">Click "Generate AI Schedule" to create your personalized study plan.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

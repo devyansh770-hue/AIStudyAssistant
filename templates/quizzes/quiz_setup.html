@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}Quiz Setup — {{ course.name }}{% endblock %}
+{% block page_title %}Practice Quiz{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Setup Card -->
+  <div class="col-md-5">
+    <div class="card p-4">
+      <h5 class="fw-bold mb-1"><i class="bi bi-question-circle text-primary"></i> Configure Quiz</h5>
+      <p class="text-muted small mb-4">{{ course.name }}</p>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Topic</label>
+        <select class="form-select" id="topicSel">
+          {% for topic in topics %}
+            <option value="{{ topic }}">{{ topic }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Difficulty</label>
+        <div class="d-flex gap-2">
+          <button onclick="setDiff(this,'easy')"
+            class="btn btn-outline-success flex-fill diff-btn">Easy</button>
+          <button onclick="setDiff(this,'medium')"
+            class="btn btn-warning flex-fill diff-btn active-diff text-white">Medium</button>
+          <button onclick="setDiff(this,'hard')"
+            class="btn btn-outline-danger flex-fill diff-btn">Hard</button>
+        </div>
+        <input type="hidden" id="diffVal" value="medium"/>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-semibold">
+          Number of Questions
+          <span class="text-muted fw-normal">(1 – 20, type any number)</span>
+        </label>
+        <input type="number" id="countVal" class="form-control"
+               value="5" min="1" max="20" placeholder="e.g. 7"/>
+      </div>
+
+      <button class="btn btn-ai w-100 py-2 fw-bold" onclick="startQuiz()">
+        <i class="bi bi-play-fill"></i> Start Quiz
+      </button>
+
+      <a href="{% url 'courses:detail' course.pk %}"
+         class="btn btn-outline-secondary w-100 mt-2">
+        <i class="bi bi-arrow-left"></i> Back to Course
+      </a>
+    </div>
+  </div>
+
+  <!-- Recent Attempts -->
+  <div class="col-md-7">
+    <div class="card p-4">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-clock-history text-success"></i> Recent Attempts
+      </h6>
+      {% if recent %}
+        {% for a in recent %}
+        <div class="d-flex justify-content-between align-items-center p-3 rounded mb-2"
+             style="background:{% if a.score_percent >= 70 %}#e8f5e9{% elif a.score_percent >= 40 %}#fff3e0{% else %}#ffebee{% endif %}">
+          <div>
+            <div class="fw-semibold">{{ a.topic }}</div>
+            <div class="text-muted small">
+              {{ a.total_questions }} questions ·
+              {{ a.time_taken_seconds }}s · {{ a.created_at|date:"M d, H:i" }}
+            </div>
+          </div>
+          <span class="badge fs-6
+            {% if a.score_percent >= 70 %}bg-success
+            {% elif a.score_percent >= 40 %}bg-warning
+            {% else %}bg-danger{% endif %}">
+            {{ a.score_percent }}%
+          </span>
+        </div>
+        {% endfor %}
+        <a href="{% url 'quizzes:history' course.pk %}"
+           class="btn btn-sm btn-outline-secondary mt-2">
+          View Full History
+        </a>
+      {% else %}
+        <div class="text-center py-4">
+          <i class="bi bi-clipboard text-muted" style="font-size:2.5rem"></i>
+          <p class="text-muted mt-2">No attempts yet. Take your first quiz!</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Topics Progress -->
+    <div class="card p-4 mt-3">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-list-check text-primary"></i> Topics Coverage
+      </h6>
+      {% for topic in topics %}
+      {% with attempted=recent %}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small">{{ topic }}</span>
+        <button onclick="quickStart('{{ topic }}')"
+                class="btn btn-xs btn-outline-primary"
+                style="font-size:0.75rem; padding:2px 8px">
+          Practice
+        </button>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentDiff = 'medium';
+
+function setDiff(btn, val) {
+  currentDiff = val;
+  document.getElementById('diffVal').value = val;
+  document.querySelectorAll('.diff-btn').forEach(b => {
+    b.classList.remove('btn-success','btn-warning','btn-danger','text-white');
+    b.classList.add(
+      b.textContent.trim() === 'Easy' ? 'btn-outline-success' :
+      b.textContent.trim() === 'Medium' ? 'btn-outline-warning' : 'btn-outline-danger'
+    );
+  });
+  btn.classList.remove('btn-outline-success','btn-outline-warning','btn-outline-danger');
+  btn.classList.add(
+    val === 'easy' ? 'btn-success' :
+    val === 'medium' ? 'btn-warning' : 'btn-danger',
+    'text-white'
+  );
+}
+
+function startQuiz() {
+  const topic = document.getElementById('topicSel').value;
+  const diff  = document.getElementById('diffVal').value;
+  const count = parseInt(document.getElementById('countVal').value);
+  if (!count || count < 1 || count > 20) {
+    alert('Please enter a number between 1 and 20.');
+    return;
+  }
+  window.location.href =
+    `/quizzes/attempt/{{ course.pk }}/?topic=${encodeURIComponent(topic)}&difficulty=${diff}&count=${count}`;
+}
+
+function quickStart(topic) {
+  document.getElementById('topicSel').value = topic;
+  startQuiz();
+}
+</script>
+{% endblock %}

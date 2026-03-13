@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual Environment
+venv/
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# Environment variables — NEVER push
+.env
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}AI Study Assistant{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* ── LIGHT (default) ── */
+    :root {
+      --bg: #f8f9fa;
+      --sidebar-bg: #1a237e;
+      --sidebar-text: #c5cae9;
+      --card-bg: #ffffff;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --border: #dee2e6;
+      --input-bg: #ffffff;
+    }
+    /* ── DARK ── */
+    [data-theme="dark"] {
+      --bg: #121212;
+      --sidebar-bg: #0d0d0d;
+      --sidebar-text: #90a4ae;
+      --card-bg: #1e1e1e;
+      --text: #e0e0e0;
+      --text-muted: #9e9e9e;
+      --border: #333;
+      --input-bg: #2a2a2a;
+    }
+    /* ── WARM ── */
+    [data-theme="warm"] {
+      --bg: #fdf6ec;
+      --sidebar-bg: #5d3a1a;
+      --sidebar-text: #f5cba7;
+      --card-bg: #fffaf4;
+      --text: #3e2000;
+      --text-muted: #7d5a3c;
+      --border: #f0d9b5;
+      --input-bg: #fff8f0;
+    }
+
+    body { background: var(--bg); color: var(--text); transition: all 0.3s; }
+    .sidebar { min-height: 100vh; background: var(--sidebar-bg); width: 240px; position: fixed; top: 0; left: 0; z-index: 100; display: flex; flex-direction: column; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-radius: 8px; margin: 2px 8px; transition: all 0.2s; }
+    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.15); color: white; }
+    .sidebar .brand { color: white; font-size: 1.2rem; font-weight: 700; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; }
+    .sidebar .section-label { color: rgba(255,255,255,0.4); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding: 8px 20px; margin-top: 8px; }
+    .main-content { margin-left: 240px; padding: 20px; min-height: 100vh; }
+    .topbar { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 12px 24px; margin: -20px -20px 20px -20px; display: flex; justify-content: space-between; align-items: center; }
+    .card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 12px; background: var(--card-bg); color: var(--text); }
+    .btn-ai { background: linear-gradient(135deg, #1a237e, #0288d1); color: white; border: none; }
+    .btn-ai:hover { background: linear-gradient(135deg, #0288d1, #1a237e); color: white; }
+    .form-control, .form-select { background: var(--input-bg); color: var(--text); border-color: var(--border); }
+    .form-control:focus, .form-select:focus { background: var(--input-bg); color: var(--text); }
+    .table { color: var(--text); }
+    .theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; color: var(--text); cursor: pointer; font-size: 0.85rem; }
+    .theme-btn:hover { background: var(--border); }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<div class="sidebar">
+  <div class="brand"><i class="bi bi-mortarboard-fill"></i> StudyAI</div>
+
+  <a href="{% url 'dashboard:home' %}" class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+    <i class="bi bi-grid-1x2"></i> Dashboard
+  </a>
+  <a href="{% url 'courses:list' %}" class="{% if request.resolver_match.app_name == 'courses' %}active{% endif %}">
+    <i class="bi bi-book"></i> My Courses
+  </a>
+  <a href="{% url 'courses:create' %}">
+    <i class="bi bi-plus-circle"></i> Add Course
+  </a>
+
+  <div class="section-label">AI Tools</div>
+  <!-- AI Tools link to first course if exists, else to courses page -->
+  <a href="{% if request.user.courses.exists %}{% url 'ai_engine:chat' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
+    <i class="bi bi-robot"></i> AI Tutor
+  </a>
+  <a href="{% if request.user.courses.exists %}{% url 'quizzes:setup' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
+    <i class="bi bi-question-circle"></i> Practice Quiz
+  </a>
+  <a href="{% if request.user.courses.exists %}{% url 'ai_engine:schedule' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
+    <i class="bi bi-calendar3"></i> Study Schedule
+  </a>
+
+  <div class="mt-auto mb-3">
+    <a href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-left"></i> Logout</a>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <h6 class="mb-0 fw-bold">{% block page_title %}Dashboard{% endblock %}</h6>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Theme Switcher -->
+      <button class="theme-btn" onclick="setTheme('light')" title="Light">☀️</button>
+      <button class="theme-btn" onclick="setTheme('dark')" title="Dark">🌙</button>
+      <button class="theme-btn" onclick="setTheme('warm')" title="Warm">🌅</button>
+      <!-- Profile -->
+      <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-secondary ms-2">
+        <i class="bi bi-person-circle"></i> {{ user.username }}
+      </a>
+    </div>
+  </div>
+
+  {% include 'partials/_messages.html' %}
+  {% block content %}{% endblock %}
+</div>
+
+{% else %}
+  {% block auth_content %}{% endblock %}
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Theme system
+  function setTheme(theme) {
+    document.getElementById('htmlRoot').setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }
+  // Load saved theme
+  const saved = localStorage.getItem('theme') || 'light';
+  document.getElementById('htmlRoot').setAttribute('data-theme', saved);
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

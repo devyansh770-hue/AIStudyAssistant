@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}My Courses{% endblock %}
+{% block page_title %}My Courses{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <p class="text-muted mb-0">{{ courses.count }} course(s) enrolled</p>
+  <a href="{% url 'courses:create' %}" class="btn btn-ai">
+    <i class="bi bi-plus-circle"></i> Add Course
+  </a>
+</div>
+
+{% if courses %}
+<div class="row g-3">
+  {% for course in courses %}
+  <div class="col-md-4">
+    <div class="card p-3 h-100" style="border-left: 4px solid #1a237e;">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="fw-bold mb-0">{{ course.name }}</h6>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-light" data-bs-toggle="dropdown">
+            <i class="bi bi-three-dots-vertical"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{% url 'courses:edit' course.pk %}"><i class="bi bi-pencil"></i> Edit</a></li>
+            <li><a class="dropdown-item text-danger" href="{% url 'courses:delete' course.pk %}"><i class="bi bi-trash"></i> Delete</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="text-muted small mb-1">{{ course.complexity_label }} · {{ course.get_topics_list|length }} topics</p>
+      <p class="text-danger small mb-2"><i class="bi bi-clock"></i> {{ course.days_until_exam }} days to exam · {{ course.exam_date }}</p>
+
+      <!-- Completion Bar -->
+      {% with pct=course.completion_percentage %}
+      <div class="mb-1 d-flex justify-content-between">
+        <small class="text-muted">Completion</small>
+        <small class="fw-bold text-primary">{{ pct }}%</small>
+      </div>
+      <div class="progress mb-3" style="height:6px;">
+        <div class="progress-bar bg-primary" style="width:{{ pct }}%"></div>
+      </div>
+      {% endwith %}
+
+      <!-- Study Hours -->
+      <div class="p-2 rounded mb-3" style="background:#f5f5f5">
+        <small class="text-muted">Study Hours: </small>
+        <strong>{{ course.hours_spent }}h</strong>
+        <small class="text-muted"> spent · {{ course.daily_study_hours }}h/day goal</small>
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap mt-auto">
+        <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-eye"></i> View
+        </a>
+        <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-sm btn-ai">
+          <i class="bi bi-question-circle"></i> Quiz
+        </a>
+        <a href="{% url 'ai_engine:schedule' course.pk %}" class="btn btn-sm btn-outline-success">
+          <i class="bi bi-calendar3"></i> Schedule
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card p-5 text-center">
+  <i class="bi bi-book text-muted" style="font-size:3rem"></i>
+  <p class="text-muted mt-3">No courses yet.</p>
+  <a href="{% url 'courses:create' %}" class="btn btn-ai">Add Your First Course</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.name }}{% endblock %}
+{% block page_title %}{{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="card p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold mb-0">Course Info</h6>
+        <div class="d-flex gap-2">
+          <a href="{% url 'courses:edit' course.pk %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-pencil"></i> Edit
+          </a>
+          <a href="{% url 'courses:delete' course.pk %}" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-trash"></i>
+          </a>
+        </div>
+      </div>
+
+      <p class="text-muted small mb-1">Exam Date</p>
+      <p class="fw-semibold text-danger">{{ course.exam_date }} <span class="badge bg-danger">{{ course.days_until_exam }} days</span></p>
+
+      <p class="text-muted small mb-1 mt-2">Complexity</p>
+      <p class="fw-semibold">{{ course.complexity_label }}</p>
+
+      <!-- Completion -->
+      {% with pct=course.completion_percentage %}
+      <p class="text-muted small mb-1 mt-2">Completion</p>
+      <div class="progress mb-1" style="height:8px">
+        <div class="progress-bar bg-success" style="width:{{ pct }}%"></div>
+      </div>
+      <p class="small text-success fw-bold">{{ pct }}% complete</p>
+      {% endwith %}
+
+      <!-- Study Hours -->
+      <div class="p-2 rounded mt-2 mb-3" style="background:#e3f2fd">
+        <div class="d-flex justify-content-between">
+          <small class="text-muted">Hours spent</small>
+          <strong>{{ course.hours_spent }}h / {{ course.daily_study_hours }}h per day</strong>
+        </div>
+      </div>
+
+      <!-- Log Hours -->
+      <form method="post" action="{% url 'courses:log_hours' course.pk %}" class="d-flex gap-2">
+        {% csrf_token %}
+        <input type="number" name="hours" class="form-control form-control-sm"
+               placeholder="Log hours" min="0.5" max="12" step="0.5" style="width:100px"/>
+        <button type="submit" class="btn btn-sm btn-ai">+ Log</button>
+      </form>
+    </div>
+
+    <!-- AI Actions -->
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3">AI Tools</h6>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-ai btn-sm"><i class="bi bi-question-circle"></i> Practice Quiz</a>
+        <a href="{% url 'ai_engine:schedule' course.pk %}" class="btn btn-outline-success btn-sm"><i class="bi bi-calendar3"></i> AI Schedule</a>
+        <a href="{% url 'ai_engine:chat' course.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-robot"></i> AI Tutor</a>
+        <a href="{% url 'ai_engine:generate_questions' course.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-lightning"></i> Generate Questions</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-list-check text-primary"></i> Topics</h6>
+      {% for topic_name in course.get_topics_list %}
+      <div class="d-flex align-items-center gap-2 p-2 rounded mb-2" style="background:#f5f5f5">
+        <i class="bi bi-dot text-primary fs-4"></i>
+        <span>{{ topic_name }}</span>
+        <a href="{% url 'ai_engine:generate_questions' course.pk %}?topic={{ topic_name }}"
+           class="ms-auto btn btn-sm btn-outline-primary">
+          <i class="bi bi-lightning-charge"></i> Practice
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if course.description %}
+    <div class="card p-3 mt-3">
+      <h6 class="fw-bold">Description</h6>
+      <p class="text-muted">{{ course.description }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Quiz History -->
+    <div class="card p-3 mt-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-clipboard-check text-success"></i> Recent Quiz Attempts</h6>
+      {% with attempts=course.attempts.all %}
+      {% if attempts %}
+      <table class="table table-sm table-hover">
+        <thead class="table-light">
+          <tr><th>Topic</th><th>Score</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for a in attempts|slice:":5" %}
+          <tr>
+            <td>{{ a.topic }}</td>
+            <td><span class="badge {% if a.score_percent >= 70 %}bg-success{% elif a.score_percent >= 40 %}bg-warning{% else %}bg-danger{% endif %}">{{ a.score_percent }}%</span></td>
+            <td class="text-muted small">{{ a.created_at|date:"M d" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-muted small">No quiz attempts yet.</p>
+      {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+</div>
+{% endblock %}

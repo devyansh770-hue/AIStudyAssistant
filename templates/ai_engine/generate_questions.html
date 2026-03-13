@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Generate Questions — {{ course.name }}{% endblock %}
+{% block page_title %}AI Question Generator{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Controls -->
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3">
+        <i class="bi bi-lightning-charge text-warning"></i> Generate Questions
+      </h6>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Topic</label>
+        <select class="form-select" id="topicSelect">
+          {% for topic in topics %}
+            <option value="{{ topic }}"
+              {% if request.GET.topic == topic %}selected{% endif %}>
+              {{ topic }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Difficulty</label>
+        <select class="form-select" id="difficultySelect">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">
+          Number of Questions
+          <span class="text-muted fw-normal">(1–20)</span>
+        </label>
+        <input type="number" id="countSelect" class="form-control"
+               value="5" min="1" max="20"/>
+      </div>
+      <button class="btn btn-ai w-100 fw-bold" onclick="generateQuestions()">
+        <i class="bi bi-robot"></i> Generate with AI
+      </button>
+      <a href="{% url 'courses:detail' course.pk %}"
+         class="btn btn-outline-secondary w-100 mt-2">
+        <i class="bi bi-arrow-left"></i> Back to Course
+      </a>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="col-md-8">
+
+    <!-- Loading -->
+    <div id="loadingBox" class="card p-5 text-center d-none">
+      <div class="spinner-border text-primary mb-3 mx-auto"></div>
+      <p class="text-muted fw-semibold">AI is generating questions...</p>
+      <p class="text-muted small">This takes 5–10 seconds</p>
+    </div>
+
+    <!-- Questions Output -->
+    <div id="questionsBox"></div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const COURSE_ID = {{ course.pk }};
+
+// Auto-trigger if topic passed via URL
+window.onload = function() {
+  const urlTopic = "{{ request.GET.topic }}";
+  if (urlTopic) {
+    document.getElementById('topicSelect').value = urlTopic;
+    generateQuestions();
+  }
+};
+
+async function generateQuestions() {
+  const topic      = document.getElementById('topicSelect').value;
+  const difficulty = document.getElementById('difficultySelect').value;
+  const count      = parseInt(document.getElementById('countSelect').value);
+
+  if (!count || count < 1 || count > 20) {
+    alert('Enter a number between 1 and 20.'); return;
+  }
+
+  document.getElementById('loadingBox').classList.remove('d-none');
+  document.getElementById('questionsBox').innerHTML = '';
+
+  try {
+    const res = await fetch('/ai/api/questions/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken')
+      },
+      body: JSON.stringify({ topic, difficulty, count, course_id: COURSE_ID })
+    });
+    const data = await res.json();
+    document.getElementById('loadingBox').classList.add('d-none');
+
+    if (data.success && data.questions.length > 0) {
+      renderQuestions(data.questions, topic, difficulty, count);
+    } else {
+      document.getElementById('questionsBox').innerHTML =
+        `<div class="alert alert-warning">
+           <i class="bi bi-exclamation-triangle"></i>
+           No questions generated. Check your ANTHROPIC_API_KEY in .env
+         </div>`;
+    }
+  } catch(e) {
+    document.getElementById('loadingBox').classList.add('d-none');
+    document.getElementById('questionsBox').innerHTML =
+      `<div class="alert alert-danger">Network error. Make sure server is running.</div>`;
+  }
+}
+
+function renderQuestions(questions, topic, difficulty, count) {
+  let html = `
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <span class="fw-bold">${questions.length} Questions</span>
+      <span class="badge bg-primary ms-2">${topic}</span>
+      <span class="badge ms-1
+        ${difficulty==='easy'?'bg-success':difficulty==='hard'?'bg-danger':'bg-warning'}">
+        ${difficulty}
+      </span>
+    </div>
+    <a href="/quizzes/attempt/${COURSE_ID}/?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}&count=${count}"
+       class="btn btn-sm btn-ai">
+      <i class="bi bi-play-fill"></i> Take as Quiz
+    </a>
+  </div>`;
+
+  questions.forEach((q, i) => {
+    html += `
+    <div class="card p-3 mb-3">
+      <p class="fw-semibold mb-2">${i+1}. ${q.question}</p>
+      <div class="row g-1 mb-2">
+        ${q.options.map((opt, j) => `
+          <div class="col-md-6">
+            <div class="p-2 rounded small
+                 ${opt.trim() === q.answer.trim()
+                   ? 'text-success fw-semibold'
+                   : 'text-muted'}"
+                 style="background:#f5f5f5">
+              <span class="badge me-1"
+                    style="background:#e0e0e0;color:#333">
+                ${'ABCD'[j]}
+              </span>
+              ${opt}
+              ${opt.trim() === q.answer.trim()
+                ? '<i class="bi bi-check-circle-fill text-success ms-1"></i>'
+                : ''}
+            </div>
+          </div>`).join('')}
+      </div>
+      ${q.explanation
+        ? `<div class="p-2 rounded small" style="background:#e8f5e9">
+             <i class="bi bi-lightbulb text-warning"></i>
+             <strong>Explanation:</strong> ${q.explanation}
+           </div>`
+        : ''}
+    </div>`;
+  });
+
+  document.getElementById('questionsBox').innerHTML = html;
+}
+
+function getCookie(name) {
+  let v = null;
+  document.cookie.split(';').forEach(c => {
+    c = c.trim();
+    if (c.startsWith(name + '='))
+      v = decodeURIComponent(c.substring(name.length + 1));
+  });
+  return v;
+}
+</script>
+{% endblock %}

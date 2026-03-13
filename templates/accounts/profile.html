@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+
+    <!-- Profile Header Card -->
+    <div class="card p-4 mb-4 text-center" style="background: linear-gradient(135deg, #1a237e, #0288d1);">
+      <div class="rounded-circle bg-white d-flex align-items-center justify-content-center mx-auto mb-3"
+           style="width:80px;height:80px;">
+        <i class="bi bi-person-fill text-primary" style="font-size:2.5rem"></i>
+      </div>
+      <h4 class="text-white fw-bold mb-0">{{ request.user.username }}</h4>
+      <p class="text-white-50">{{ request.user.email }}</p>
+      <p class="text-white-50 small">Member since {{ request.user.date_joined|date:"F Y" }}</p>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-4">
+        <div class="card p-3 text-center">
+          <div class="fw-bold text-primary fs-4">{{ request.user.courses.count }}</div>
+          <div class="text-muted small">Courses</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card p-3 text-center">
+          <div class="fw-bold text-success fs-4">{{ request.user.attempts.count }}</div>
+          <div class="text-muted small">Quizzes</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="card p-3 text-center">
+          <div class="fw-bold text-warning fs-4">{{ profile.study_goal_hours }}h</div>
+          <div class="text-muted small">Daily Goal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="card p-4">
+      <h6 class="fw-bold mb-3"><i class="bi bi-pencil text-primary"></i> Edit Profile</h6>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Username</label>
+          <input type="text" name="username" value="{{ request.user.username }}" class="form-control"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Email</label>
+          <input type="email" value="{{ request.user.email }}" class="form-control" disabled/>
+          <div class="form-text">Email cannot be changed.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Bio</label>
+          {{ form.bio }}
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold">Daily Study Goal (hours)</label>
+          {{ form.study_goal_hours }}
+        </div>
+        <button type="submit" class="btn btn-ai px-4">
+          <i class="bi bi-check-lg"></i> Save Changes
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
