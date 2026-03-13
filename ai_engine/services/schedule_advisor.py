@@ -2,6 +2,7 @@ import json
 from google import genai
 from django.conf import settings
 
+
 def generate_schedule(course_name, topics, exam_date, days_left, complexity, hours):
     # Initialize the client with the API key from settings
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
