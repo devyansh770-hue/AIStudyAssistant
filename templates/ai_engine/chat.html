@@ -3,9 +3,11 @@
 {% block page_title %}AI Tutor{% endblock %}
 
 {% block content %}
+{% csrf_token %}
+
 <div class="row g-4">
   <div class="col-md-3">
-    <div class="card p-3 shadow-sm">
+    <div class="card p-3 shadow-sm border-0">
       <h6 class="fw-bold mb-3">Course: {{ course.name }}</h6>
       <label class="form-label fw-semibold small">Current Topic</label>
       <select class="form-select form-select-sm" id="topicSelect">
@@ -17,22 +19,31 @@
       <p class="text-muted small">Select a topic to give the AI context about what you're studying right now.</p>
     </div>
   </div>
+  
   <div class="col-md-9">
-    <div class="card shadow-sm" style="height:70vh; display:flex; flex-direction:column;">
-      <div class="p-3 border-bottom bg-light">
+    <div class="card shadow-sm border-0" style="height:75vh; display:flex; flex-direction:column;">
+      <div class="p-3 border-bottom bg-white rounded-top">
         <h6 class="mb-0 fw-bold"><i class="bi bi-robot text-primary"></i> AI Tutor Chat</h6>
       </div>
-      <div id="chatBox" style="flex:1; overflow-y:auto; padding:16px; background-color: #fafafa;">
-        <div class="d-flex gap-2 mb-3">
-          <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style="width:32px;height:32px;min-width:32px"><i class="bi bi-robot" style="font-size:0.8rem"></i></div>
-          <div class="p-3 rounded shadow-sm" style="background:#e3f2fd; max-width:80%">
+      
+      <div id="chatBox" style="flex:1; overflow-y:auto; padding:20px; background-color: #f8f9fa;">
+        <div class="d-flex gap-2 mb-4">
+          <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style="width:35px;height:35px;min-width:35px">
+            <i class="bi bi-robot"></i>
+          </div>
+          <div class="p-3 rounded shadow-sm bg-white" style="max-width:80%; border-left: 4px solid #0d6efd;">
             Hi! I'm your AI tutor for <strong>{{ course.name }}</strong>. Ask me anything about your topics!
           </div>
         </div>
       </div>
-      <div class="p-3 border-top d-flex gap-2 bg-white">
-        <input type="text" id="messageInput" class="form-control" placeholder="Ask a question..." autocomplete="off"/>
-        <button class="btn btn-primary px-3" onclick="sendMessage()"><i class="bi bi-send"></i></button>
+      
+      <div class="p-3 border-top bg-white rounded-bottom">
+        <div class="input-group">
+          <input type="text" id="messageInput" class="form-control border-0 bg-light" placeholder="Ask a question..." autocomplete="off">
+          <button class="btn btn-primary px-4" type="button" id="sendBtn" onclick="sendMessage()">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -42,117 +53,121 @@
 {% block extra_js %}
 <script>
 const COURSE_ID = {{ course.pk }};
-let chatHistory = []; // This stores the conversation context
+let chatHistory = []; 
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 async function sendMessage() {
-  const input = document.getElementById('messageInput');
-  const question = input.value.trim();
-  if (!question) return;
+    const input = document.getElementById('messageInput');
+    const question = input.value.trim();
+    if (!question) return;
 
-  const topic = document.getElementById('topicSelect').value;
-  
-  // 1. Update UI
-  addMessage(question, 'user');
-  input.value = '';
-  
-  // 2. Update History for Gemini (User Role)
-  chatHistory.push({role: 'user', content: question});
-
-  addTyping();
-  
-  try {
-    const res = await fetch('/ai/api/chat/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json', 
-        'X-CSRFToken': getCookie('csrftoken')
-      },
-      // We send the last 6 messages to keep the context without hitting token limits
-      body: JSON.stringify({
-        question, 
-        course_id: COURSE_ID, 
-        topic, 
-        history: chatHistory.slice(-6) 
-      })
-    });
-
-    removeTyping();
-    const data = await res.json();
-
-    if (data.success) {
-      addMessage(data.answer, 'ai');
-      // 3. Update History for Gemini (Model Role)
-      chatHistory.push({role: 'model', content: data.answer});
-    } else {
-      addMessage("Error: " + data.error, 'ai');
+    // Try getting token from cookie first, then fall back to the hidden input
+    let csrftoken = getCookie('csrftoken');
+    if (!csrftoken) {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) csrftoken = csrfInput.value;
     }
-  } catch (error) {
-    removeTyping();
-    addMessage("Connection error. Please try again.", 'ai');
-    console.error(error);
-  }
+
+    const topic = document.getElementById('topicSelect').value;
+    
+    addMessage(question, 'user');
+    input.value = '';
+    chatHistory.push({role: 'user', content: question});
+
+    addTyping();
+    
+    try {
+        const res = await fetch('/ai/api/chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': csrftoken 
+            },
+            body: JSON.stringify({
+                question, 
+                course_id: COURSE_ID, 
+                topic, 
+                history: chatHistory.slice(-6) 
+            })
+        });
+
+        const data = await res.json();
+        removeTyping();
+
+        if (data.success) {
+            addMessage(data.answer, 'ai');
+            chatHistory.push({role: 'model', content: data.answer});
+        } else {
+            // Log the detailed error from backend to help debugging
+            console.error("Backend Error:", data.error);
+            addMessage("System Error: " + (data.error || "Unknown error"), 'ai');
+        }
+    } catch (error) {
+        removeTyping();
+        addMessage("Connection lost. Please check your internet.", 'ai');
+        console.error("Fetch Error:", error);
+    }
 }
 
 function addMessage(text, role) {
-  const box = document.getElementById('chatBox');
-  const isAI = role === 'ai';
-  
-  // Simple formatting for new lines and bold text
-  let formattedText = text
-    .replace(/\n/g, '<br/>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-  const messageHtml = `
-    <div class="d-flex gap-2 mb-3 ${isAI ? '' : 'flex-row-reverse'}">
-      <div class="rounded-circle ${isAI ? 'bg-primary' : 'bg-secondary'} d-flex align-items-center justify-content-center text-white shadow-sm" style="width:32px;height:32px;min-width:32px">
-        <i class="bi bi-${isAI ? 'robot' : 'person'}" style="font-size:0.8rem"></i>
-      </div>
-      <div class="p-3 rounded shadow-sm" style="background:${isAI ? '#e3f2fd' : '#ffffff'}; border: ${isAI ? 'none' : '1px solid #dee2e6'}; max-width:80%">
-        ${formattedText}
-      </div>
-    </div>`;
+    const box = document.getElementById('chatBox');
+    const isAI = role === 'ai';
     
-  box.insertAdjacentHTML('beforeend', messageHtml);
-  box.scrollTop = box.scrollHeight;
+    let formattedText = text
+        .replace(/\n/g, '<br/>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    const messageHtml = `
+        <div class="d-flex gap-2 mb-4 ${isAI ? '' : 'flex-row-reverse'}">
+            <div class="rounded-circle ${isAI ? 'bg-primary' : 'bg-dark'} d-flex align-items-center justify-content-center text-white shadow-sm" style="width:35px;height:35px;min-width:35px">
+                <i class="bi bi-${isAI ? 'robot' : 'person-fill'}"></i>
+            </div>
+            <div class="p-3 rounded shadow-sm ${isAI ? 'bg-white' : 'bg-primary text-white'}" 
+                 style="max-width:80%; ${isAI ? 'border-left: 4px solid #0d6efd;' : ''}">
+                ${formattedText}
+            </div>
+        </div>`;
+        
+    box.insertAdjacentHTML('beforeend', messageHtml);
+    box.scrollTop = box.scrollHeight;
 }
 
 function addTyping() {
-  const box = document.getElementById('chatBox');
-  const typingHtml = `
-    <div id="typing" class="d-flex gap-2 mb-3">
-      <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style="width:32px;height:32px;min-width:32px">
-        <i class="bi bi-robot" style="font-size:0.8rem"></i>
-      </div>
-      <div class="p-3 rounded shadow-sm" style="background:#e3f2fd">
-        <div class="spinner-grow spinner-grow-sm text-primary" role="status"></div> Thinking...
-      </div>
-    </div>`;
-  box.insertAdjacentHTML('beforeend', typingHtml);
-  box.scrollTop = box.scrollHeight;
+    const box = document.getElementById('chatBox');
+    const typingHtml = `
+        <div id="typing" class="d-flex gap-2 mb-4">
+            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white shadow-sm" style="width:35px;height:35px;min-width:35px">
+                <i class="bi bi-robot"></i>
+            </div>
+            <div class="p-3 rounded bg-white shadow-sm border-start border-primary border-4">
+                <div class="spinner-grow spinner-grow-sm text-primary" role="status"></div> Thinking...
+            </div>
+        </div>`;
+    box.insertAdjacentHTML('beforeend', typingHtml);
+    box.scrollTop = box.scrollHeight;
 }
 
 function removeTyping() {
-  const t = document.getElementById('typing');
-  if (t) t.remove();
+    const t = document.getElementById('typing');
+    if (t) t.remove();
 }
 
-document.getElementById('messageInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') sendMessage();
+document.getElementById('messageInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
 });
-
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
 </script>
 {% endblock %}
