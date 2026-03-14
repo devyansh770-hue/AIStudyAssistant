@@ -69,7 +69,6 @@
 <script>
 const COURSE_ID = {{ course.pk }};
 
-// Auto-trigger if topic passed via URL
 window.onload = function() {
   const urlTopic = "{{ request.GET.topic }}";
   if (urlTopic) {
@@ -102,18 +101,19 @@ async function generateQuestions() {
     const data = await res.json();
     document.getElementById('loadingBox').classList.add('d-none');
 
-    if (data.success && data.questions.length > 0) {
+    if (data.success && data.questions && data.questions.length > 0) {
       renderQuestions(data.questions, topic, difficulty, count);
     } else {
-      document.getElementById('questionsBox').innerHTML =
+      // Updated error message to be more accurate
+      document.getElementById('questionsBox').innerHTML = 
         `<div class="alert alert-warning">
            <i class="bi bi-exclamation-triangle"></i>
-           No questions generated. Check your ANTHROPIC_API_KEY in .env
+           Failed to generate questions. Check your console and GEMINI_API_KEY.
          </div>`;
     }
   } catch(e) {
     document.getElementById('loadingBox').classList.add('d-none');
-    document.getElementById('questionsBox').innerHTML =
+    document.getElementById('questionsBox').innerHTML = 
       `<div class="alert alert-danger">Network error. Make sure server is running.</div>`;
   }
 }
@@ -122,47 +122,46 @@ function renderQuestions(questions, topic, difficulty, count) {
   let html = `
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-      <span class="fw-bold">${questions.length} Questions</span>
+      <span class="fw-bold text-dark">${questions.length} Questions</span>
       <span class="badge bg-primary ms-2">${topic}</span>
-      <span class="badge ms-1
+      <span class="badge ms-1 
         ${difficulty==='easy'?'bg-success':difficulty==='hard'?'bg-danger':'bg-warning'}">
         ${difficulty}
       </span>
     </div>
-    <a href="/quizzes/attempt/${COURSE_ID}/?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}&count=${count}"
-       class="btn btn-sm btn-ai">
+    <a href="/quizzes/attempt/${COURSE_ID}/?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}&count=${count}" 
+       class="btn btn-sm btn-primary">
       <i class="bi bi-play-fill"></i> Take as Quiz
     </a>
   </div>`;
 
   questions.forEach((q, i) => {
+    // FIX: Use q.correct_answer to match your Python service
+    const correctAnswer = q.correct_answer || q.answer; 
+
     html += `
-    <div class="card p-3 mb-3">
+    <div class="card p-3 mb-3 border-0 shadow-sm">
       <p class="fw-semibold mb-2">${i+1}. ${q.question}</p>
-      <div class="row g-1 mb-2">
-        ${q.options.map((opt, j) => `
+      <div class="row g-2 mb-2">
+        ${q.options.map((opt, j) => {
+          const isCorrect = opt.trim() === correctAnswer.trim();
+          return `
           <div class="col-md-6">
-            <div class="p-2 rounded small
-                 ${opt.trim() === q.answer.trim()
-                   ? 'text-success fw-semibold'
-                   : 'text-muted'}"
-                 style="background:#f5f5f5">
-              <span class="badge me-1"
-                    style="background:#e0e0e0;color:#333">
+            <div class="p-2 rounded small ${isCorrect ? 'bg-success bg-opacity-10 border border-success' : 'bg-light border text-muted'}" style="min-height: 45px; display: flex; align-items: center;">
+              <span class="badge me-2" style="background:${isCorrect ? '#198754' : '#6c757d'}; color: white;">
                 ${'ABCD'[j]}
               </span>
-              ${opt}
-              ${opt.trim() === q.answer.trim()
-                ? '<i class="bi bi-check-circle-fill text-success ms-1"></i>'
-                : ''}
+              <span class="${isCorrect ? 'text-success fw-bold' : ''}">${opt}</span>
+              ${isCorrect ? '<i class="bi bi-check-circle-fill text-success ms-auto px-2"></i>' : ''}
             </div>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
       </div>
-      ${q.explanation
-        ? `<div class="p-2 rounded small" style="background:#e8f5e9">
-             <i class="bi bi-lightbulb text-warning"></i>
+      ${q.explanation 
+        ? `<div class="p-2 rounded small mt-2" style="background:#fff3cd; border-left: 4px solid #ffc107">
+             <i class="bi bi-lightbulb-fill text-warning me-1"></i>
              <strong>Explanation:</strong> ${q.explanation}
-           </div>`
+           </div>` 
         : ''}
     </div>`;
   });
@@ -171,13 +170,18 @@ function renderQuestions(questions, topic, difficulty, count) {
 }
 
 function getCookie(name) {
-  let v = null;
-  document.cookie.split(';').forEach(c => {
-    c = c.trim();
-    if (c.startsWith(name + '='))
-      v = decodeURIComponent(c.substring(name.length + 1));
-  });
-  return v;
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 </script>
 {% endblock %}

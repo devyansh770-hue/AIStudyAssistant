@@ -16,14 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.shortcuts import redirect
+from accounts import views as account_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', account_views.landing_page, name='landing'),
     path('accounts/', include('accounts.urls')),
     path('courses/', include('courses.urls')),
     path('ai/', include('ai_engine.urls')),
     path('quizzes/', include('quizzes.urls')),
     path('dashboard/', include('dashboard.urls')),
-    path('', lambda request: redirect('dashboard:home')),
 ]

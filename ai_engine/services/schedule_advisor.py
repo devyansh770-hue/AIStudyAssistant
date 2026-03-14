@@ -1,48 +1,56 @@
 import json
+import os
 from google import genai
+from google.genai import types
 from django.conf import settings
 
-
 def generate_schedule(course_name, topics, exam_date, days_left, complexity, hours):
-    # Initialize the client with the API key from settings
+    # Initialize the client (Uses GEMINI_API_KEY from your settings.py)
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     
     prompt = f"""
-    Create a study schedule for the course: {course_name}.
-    Topics: {topics}.
-    Days until exam: {days_left}.
-    Daily study hours: {hours}.
-    Course complexity (1-3): {complexity}.
-
-    Return ONLY a JSON list of objects. Each object must have these keys:
-    "day": (integer), "topic": (string), "tasks": (list of strings), "tip": (string), "duration_hours": (integer)
+    As an AI Study Assistant, create a detailed study schedule for: {course_name}.
+    Topics to cover: {topics}.
+    Days until exam: {days_left} (Exam on {exam_date}).
+    Daily study capacity: {hours} hours.
+    Subject complexity: {complexity}/3.
     """
     
     try:
-        # Using 'gemini-1.5-flash' to avoid regional v1beta 404 errors
+        # Use Gemini 3 Flash for speed and reliability in a hackathon
         response = client.models.generate_content(
-            model="gemini-1.5-flash", 
+            model="gemini-2.5-flash", 
             contents=prompt,
-            config={
-                'response_mime_type': 'application/json',
-            }
+            config=types.GenerateContentConfig(
+                response_mime_type='application/json',
+                # This ensures the AI follows your JSON structure exactly
+                response_schema={
+                    "type": "ARRAY",
+                    "items": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "day": {"type": "INTEGER"},
+                            "topic": {"type": "STRING"},
+                            "tasks": {"type": "ARRAY", "items": {"type": "STRING"}},
+                            "tip": {"type": "STRING"},
+                            "duration_hours": {"type": "INTEGER"}
+                        },
+                        "required": ["day", "topic", "tasks", "tip", "duration_hours"]
+                    }
+                }
+            )
         )
         
-        # Strip potential markdown backticks if the AI includes them
-        raw_text = response.text.strip()
-        if raw_text.startswith("```"):
-            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-
-        # Convert JSON string to Python list
-        return json.loads(raw_text)
+        # Native structured output is already a clean JSON string
+        return json.loads(response.text)
 
     except Exception as e:
         print(f"AI Generation Error: {e}")
-        # Fallback list so the template doesn't crash
+        # Fallback to keep the UI from crashing
         return [{
-            "day": "!",
-            "topic": "API Error",
-            "tasks": [f"Details: {str(e)}"],
-            "tip": "Verify your API Key in Google AI Studio.",
+            "day": 1,
+            "topic": "Error loading schedule",
+            "tasks": ["Check your console logs for API errors", f"Error: {str(e)}"],
+            "tip": "Ensure your GEMINI_API_KEY is correct in .env",
             "duration_hours": 0
         }]

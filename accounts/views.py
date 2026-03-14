@@ -2,8 +2,18 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import RegisterForm, LoginForm, ProfileForm
-from .models import UserProfile
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
+from .models import CustomUser, UserProfile, OTPVerification, PasswordResetOTP
+from .forms import (RegisterForm, OTPForm, LoginForm,
+                    PasswordResetRequestForm, PasswordResetConfirmForm, ProfileForm)
+from .utils import send_otp_email
+
+
+def landing_page(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard:home')
+    return render(request, 'landing.html')
 
 
 def register_view(request):
@@ -14,14 +24,88 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             UserProfile.objects.create(user=user)
-            login(request, user)
-            messages.success(request, f'Welcome {user.username}! Account created.')
-            return redirect('dashboard:home')
-        else:
-            messages.error(request, 'Please fix the errors below.')
+            # Generate and send OTP
+            otp_obj, _ = OTPVerification.objects.get_or_create(user=user)
+            code = otp_obj.generate()
+            try:
+                send_otp_email(user.email, code, 'verification')
+                request.session['otp_user_id'] = user.id
+                messages.success(request, f'OTP sent to {user.email}')
+                return redirect('accounts:verify_otp')
+            except Exception as e:
+                user.delete()
+                messages.error(request, 'Failed to send OTP. Check email settings.')
     else:
         form = RegisterForm()
     return render(request, 'accounts/register.html', {'form': form})
+
+
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+def verify_otp(request):
+    user_id = request.session.get('otp_user_id')
+    if not user_id:
+        return redirect('accounts:register')
+
+    try:
+        user = CustomUser.objects.get(pk=user_id)
+        otp_obj = OTPVerification.objects.get(user=user)
+    except (CustomUser.DoesNotExist, OTPVerification.DoesNotExist):
+        return redirect('accounts:register')
+
+    if request.method == 'POST':
+        form = OTPForm(request.POST)
+        if form.is_valid():
+            entered = form.cleaned_data['code']
+
+            # Brute force protection
+            if otp_obj.attempts >= 5:
+                messages.error(request, 'Too many wrong attempts. Please register again.')
+                user.delete()
+                return redirect('accounts:register')
+
+            if otp_obj.is_expired():
+                messages.error(request, 'OTP expired. Please register again.')
+                user.delete()
+                return redirect('accounts:register')
+
+            if entered == otp_obj.code:
+                user.is_active = True
+                user.is_verified = True
+                user.save()
+                otp_obj.delete()
+                del request.session['otp_user_id']
+                login(request, user,
+                      backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, f'Welcome {user.username}! Email verified.')
+                return redirect('dashboard:home')
+            else:
+                otp_obj.attempts += 1
+                otp_obj.save()
+                remaining = 5 - otp_obj.attempts
+                messages.error(request, f'Wrong OTP. {remaining} attempts left.')
+    else:
+        form = OTPForm()
+
+    return render(request, 'accounts/verify_otp.html', {
+        'form': form,
+        'email': user.email,
+        'attempts_left': 5 - otp_obj.attempts,
+    })
+
+
+def resend_otp(request):
+    user_id = request.session.get('otp_user_id')
+    if not user_id:
+        return redirect('accounts:register')
+    try:
+        user = CustomUser.objects.get(pk=user_id)
+        otp_obj, _ = OTPVerification.objects.get_or_create(user=user)
+        code = otp_obj.generate()
+        send_otp_email(user.email, code, 'verification')
+        messages.success(request, 'New OTP sent!')
+    except Exception:
+        messages.error(request, 'Failed to resend. Try again.')
+    return redirect('accounts:verify_otp')
 
 
 def login_view(request):
@@ -34,6 +118,9 @@ def login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=email, password=password)
             if user:
+                if not user.is_verified:
+                    messages.error(request, 'Please verify your email first.')
+                    return redirect('accounts:login')
                 login(request, user)
                 messages.success(request, f'Welcome back, {user.username}!')
                 return redirect('dashboard:home')
@@ -45,8 +132,95 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    messages.info(request, 'You have been logged out.')
+    messages.info(request, 'Logged out successfully.')
     return redirect('accounts:login')
+
+
+@ratelimit(key='ip', rate='3/m', method='POST', block=True)
+def password_reset_request(request):
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            try:
+                user = CustomUser.objects.get(email=email, is_verified=True)
+                otp_obj, _ = PasswordResetOTP.objects.get_or_create(user=user)
+                code = otp_obj.generate()
+                send_otp_email(email, code, 'reset')
+                request.session['reset_user_id'] = user.id
+                messages.success(request, f'OTP sent to {email}')
+                return redirect('accounts:password_reset_verify')
+            except CustomUser.DoesNotExist:
+                # Don't reveal if email exists
+                messages.success(request,
+                    'If that email is registered, an OTP has been sent.')
+    else:
+        form = PasswordResetRequestForm()
+    return render(request, 'accounts/password_reset_request.html', {'form': form})
+
+
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
+def password_reset_verify(request):
+    user_id = request.session.get('reset_user_id')
+    if not user_id:
+        return redirect('accounts:password_reset_request')
+    try:
+        user = CustomUser.objects.get(pk=user_id)
+        otp_obj = PasswordResetOTP.objects.filter(
+            user=user, is_used=False
+        ).latest('created_at')
+    except Exception:
+        return redirect('accounts:password_reset_request')
+
+    if request.method == 'POST':
+        form = OTPForm(request.POST)
+        if form.is_valid():
+            entered = form.cleaned_data['code']
+            if otp_obj.attempts >= 5:
+                messages.error(request, 'Too many attempts. Request a new OTP.')
+                return redirect('accounts:password_reset_request')
+            if otp_obj.is_expired():
+                messages.error(request, 'OTP expired. Request a new one.')
+                return redirect('accounts:password_reset_request')
+            if entered == otp_obj.code:
+                request.session['reset_verified'] = True
+                otp_obj.is_used = True
+                otp_obj.save()
+                return redirect('accounts:password_reset_confirm')
+            else:
+                otp_obj.attempts += 1
+                otp_obj.save()
+                messages.error(request,
+                    f'Wrong OTP. {5 - otp_obj.attempts} attempts left.')
+    else:
+        form = OTPForm()
+    return render(request, 'accounts/password_reset_verify.html', {
+        'form': form, 'email': user.email
+    })
+
+
+def password_reset_confirm(request):
+    user_id = request.session.get('reset_user_id')
+    verified = request.session.get('reset_verified')
+    if not user_id or not verified:
+        return redirect('accounts:password_reset_request')
+    try:
+        user = CustomUser.objects.get(pk=user_id)
+    except CustomUser.DoesNotExist:
+        return redirect('accounts:password_reset_request')
+
+    if request.method == 'POST':
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            user.set_password(form.cleaned_data['new_password'])
+            user.save()
+            del request.session['reset_user_id']
+            del request.session['reset_verified']
+            messages.success(request, 'Password reset! Please login.')
+            return redirect('accounts:login')
+    else:
+        form = PasswordResetConfirmForm()
+    return render(request, 'accounts/password_reset_confirm.html', {'form': form})
 
 
 @login_required
@@ -56,14 +230,10 @@ def profile_view(request):
         form = ProfileForm(request.POST, instance=profile)
         if form.is_valid():
             form.save()
-            # also update username
             request.user.username = request.POST.get('username', request.user.username)
             request.user.save()
             messages.success(request, 'Profile updated!')
             return redirect('accounts:profile')
     else:
         form = ProfileForm(instance=profile)
-    return render(request, 'accounts/profile.html', {
-        'form': form,
-        'profile': profile
-    })
+    return render(request, 'accounts/profile.html', {'form': form, 'profile': profile})

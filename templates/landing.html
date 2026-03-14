@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>StudyAI — AI-Powered Study Assistant</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --primary:#6c63ff;
+      --secondary:#00d4ff;
+      --accent:#ff6584;
+      --dark:#0a0a1a;
+      --card:rgba(255,255,255,0.05);
+    }
+    html{scroll-behavior:smooth;}
+    body{
+      font-family:'Segoe UI',system-ui,sans-serif;
+      background:var(--dark);
+      color:white;
+      overflow-x:hidden;
+    }
+
+    /* PARTICLES */
+    #particles-js{
+      position:fixed;width:100%;height:100%;
+      z-index:0;top:0;left:0;
+    }
+
+    /* NAV */
+    nav{
+      position:fixed;top:0;width:100%;z-index:100;
+      padding:16px 60px;
+      display:flex;justify-content:space-between;align-items:center;
+      background:rgba(10,10,26,0.85);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,0.05);
+      transition:all 0.3s;
+    }
+    .nav-brand{
+      font-size:1.4rem;font-weight:800;
+      background:linear-gradient(90deg,var(--primary),var(--secondary));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .nav-links a{
+      color:rgba(255,255,255,0.7);text-decoration:none;
+      margin-left:32px;font-size:0.9rem;transition:color 0.2s;
+    }
+    .nav-links a:hover{color:white;}
+    .nav-cta{
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:white!important;padding:8px 20px;
+      border-radius:25px;font-weight:600;
+      box-shadow:0 0 20px rgba(108,99,255,0.4);
+    }
+    .nav-cta:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(108,99,255,0.7)!important;}
+
+    /* HERO */
+    .hero{
+      position:relative;z-index:1;
+      min-height:100vh;
+      display:flex;align-items:center;justify-content:center;
+      text-align:center;padding:120px 20px 60px;
+    }
+    .hero-badge{
+      display:inline-flex;align-items:center;gap:8px;
+      background:rgba(108,99,255,0.15);
+      border:1px solid rgba(108,99,255,0.3);
+      border-radius:25px;padding:6px 16px;
+      font-size:0.8rem;color:var(--secondary);
+      margin-bottom:24px;
+      animation:fadeDown 0.8s ease;
+    }
+    .hero h1{
+      font-size:clamp(2.5rem,6vw,5rem);
+      font-weight:900;line-height:1.1;
+      margin-bottom:24px;
+      animation:fadeUp 0.8s ease 0.1s both;
+    }
+    .gradient-text{
+      background:linear-gradient(135deg,var(--primary),var(--secondary),var(--accent));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-size:200%;
+      animation:gradientShift 3s ease infinite;
+    }
+    @keyframes gradientShift{
+      0%{background-position:0%}
+      50%{background-position:100%}
+      100%{background-position:0%}
+    }
+    .hero p{
+      font-size:1.15rem;color:rgba(255,255,255,0.65);
+      max-width:560px;margin:0 auto 40px;line-height:1.7;
+      animation:fadeUp 0.8s ease 0.2s both;
+    }
+    .hero-btns{
+      display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
+      animation:fadeUp 0.8s ease 0.3s both;
+    }
+    .btn-primary-hero{
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      color:white;text-decoration:none;
+      padding:14px 36px;border-radius:50px;
+      font-weight:700;font-size:1rem;
+      box-shadow:0 0 40px rgba(108,99,255,0.5);
+      transition:all 0.3s;display:inline-flex;align-items:center;gap:8px;
+    }
+    .btn-primary-hero:hover{
+      transform:translateY(-3px);
+      box-shadow:0 0 60px rgba(108,99,255,0.8);color:white;
+    }
+    .btn-outline-hero{
+      border:1px solid rgba(255,255,255,0.2);
+      color:white;text-decoration:none;
+      padding:14px 36px;border-radius:50px;
+      font-weight:600;font-size:1rem;
+      backdrop-filter:blur(10px);
+      background:rgba(255,255,255,0.05);
+      transition:all 0.3s;display:inline-flex;align-items:center;gap:8px;
+    }
+    .btn-outline-hero:hover{
+      border-color:var(--primary);color:white;
+      background:rgba(108,99,255,0.15);
+    }
+
+    /* FLOATING CARDS */
+    .hero-visual{
+      position:relative;z-index:1;
+      margin-top:80px;
+      display:flex;justify-content:center;gap:20px;flex-wrap:wrap;
+      animation:fadeUp 0.8s ease 0.4s both;
+    }
+    .floating-card{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:20px;padding:20px 24px;
+      backdrop-filter:blur(20px);
+      display:flex;align-items:center;gap:12px;
+      animation:float 4s ease-in-out infinite;
+    }
+    .floating-card:nth-child(2){animation-delay:0.5s;}
+    .floating-card:nth-child(3){animation-delay:1s;}
+    .floating-card:nth-child(4){animation-delay:1.5s;}
+    .fc-icon{
+      width:44px;height:44px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.3rem;
+    }
+
+    /* FEATURES SECTION */
+    section{position:relative;z-index:1;padding:100px 60px;}
+    .section-label{
+      text-align:center;
+      font-size:0.8rem;letter-spacing:3px;
+      color:var(--secondary);text-transform:uppercase;
+      margin-bottom:16px;
+    }
+    .section-title{
+      text-align:center;font-size:clamp(1.8rem,4vw,3rem);
+      font-weight:800;margin-bottom:16px;
+    }
+    .section-sub{
+      text-align:center;color:rgba(255,255,255,0.5);
+      max-width:500px;margin:0 auto 60px;line-height:1.7;
+    }
+
+    .features-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+      gap:24px;max-width:1100px;margin:0 auto;
+    }
+    .feature-card{
+      background:var(--card);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:20px;padding:32px;
+      transition:all 0.3s;
+      position:relative;overflow:hidden;
+    }
+    .feature-card::before{
+      content:'';position:absolute;
+      top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,var(--primary),var(--secondary));
+      opacity:0;transition:opacity 0.3s;
+    }
+    .feature-card:hover{
+      transform:translateY(-6px);
+      border-color:rgba(108,99,255,0.3);
+      box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    }
+    .feature-card:hover::before{opacity:1;}
+    .feature-icon{
+      width:52px;height:52px;border-radius:14px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;margin-bottom:20px;
+    }
+    .feature-card h3{font-size:1.1rem;font-weight:700;margin-bottom:10px;}
+    .feature-card p{color:rgba(255,255,255,0.55);font-size:0.9rem;line-height:1.6;}
+
+    /* STATS */
+    .stats-section{
+      position:relative;z-index:1;
+      padding:80px 60px;
+      background:linear-gradient(135deg,rgba(108,99,255,0.1),rgba(0,212,255,0.05));
+      border-top:1px solid rgba(255,255,255,0.05);
+      border-bottom:1px solid rgba(255,255,255,0.05);
+    }
+    .stats-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:40px;max-width:900px;margin:0 auto;text-align:center;
+    }
+    .stat-num{
+      font-size:3rem;font-weight:900;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    }
+    .stat-label{color:rgba(255,255,255,0.5);font-size:0.9rem;margin-top:4px;}
+
+    /* HOW IT WORKS */
+    .steps{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:32px;max-width:1000px;margin:0 auto;
+    }
+    .step{text-align:center;padding:0 20px;}
+    .step-num{
+      width:56px;height:56px;border-radius:50%;
+      background:linear-gradient(135deg,var(--primary),var(--secondary));
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.3rem;font-weight:800;margin:0 auto 20px;
+      box-shadow:0 0 30px rgba(108,99,255,0.4);
+    }
+    .step h3{font-size:1rem;font-weight:700;margin-bottom:8px;}
+    .step p{color:rgba(255,255,255,0.5);font-size:0.875rem;line-height:1.6;}
+    .step-connector{
+      display:none;
+    }
+
+    /* CTA SECTION */
+    .cta-section{
+      position:relative;z-index:1;
+      padding:100px 20px;text-align:center;
+    }
+    .cta-box{
+      max-width:700px;margin:0 auto;
+      background:linear-gradient(135deg,rgba(108,99,255,0.15),rgba(0,212,255,0.1));
+      border:1px solid rgba(108,99,255,0.3);
+      border-radius:30px;padding:60px 40px;
+      backdrop-filter:blur(20px);
+    }
+    .cta-box h2{font-size:2.5rem;font-weight:800;margin-bottom:16px;}
+    .cta-box p{color:rgba(255,255,255,0.6);margin-bottom:36px;line-height:1.7;}
+
+    /* FOOTER */
+    footer{
+      position:relative;z-index:1;
+      text-align:center;padding:40px;
+      color:rgba(255,255,255,0.3);font-size:0.85rem;
+      border-top:1px solid rgba(255,255,255,0.05);
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(30px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+    @keyframes fadeDown{
+      from{opacity:0;transform:translateY(-20px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+    @keyframes float{
+      0%,100%{transform:translateY(0);}
+      50%{transform:translateY(-12px);}
+    }
+
+    /* SCROLL REVEAL */
+    .reveal{opacity:0;transform:translateY(40px);transition:all 0.7s ease;}
+    .reveal.visible{opacity:1;transform:translateY(0);}
+
+    @media(max-width:768px){
+      nav{padding:16px 20px;}
+      section{padding:60px 20px;}
+      .stats-section{padding:60px 20px;}
+      .nav-links{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<div id="particles-js"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">⚡ StudyAI</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#stats">Stats</a>
+    <a href="{% url 'accounts:login' %}" class="nav-cta">Login →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-badge">
+      <i class="bi bi-stars"></i>
+       Built for Students
+    </div>
+    <h1>
+      Study Smarter,<br/>
+      <span class="gradient-text">Not Harder.</span>
+    </h1>
+    <p>
+      Your AI-powered study companion that generates questions,
+      builds personalized schedules, and tutors you — all around
+      your exact syllabus and exam date.
+    </p>
+    <div class="hero-btns">
+      <a href="{% url 'accounts:register' %}" class="btn-primary-hero">
+        <i class="bi bi-rocket-takeoff"></i> Get Started Free
+      </a>
+      <a href="{% url 'accounts:login' %}" class="btn-outline-hero">
+        <i class="bi bi-box-arrow-in-right"></i> Login
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FLOATING CARDS VISUAL -->
+<div class="hero-visual" style="margin-top:-40px;">
+  <div class="floating-card">
+    <div class="fc-icon" style="background:rgba(108,99,255,0.2);color:#6c63ff">
+      <i class="bi bi-robot"></i>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:0.9rem">AI Tutor</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.8rem">Instant answers</div>
+    </div>
+  </div>
+  <div class="floating-card">
+    <div class="fc-icon" style="background:rgba(0,212,255,0.15);color:#00d4ff">
+      <i class="bi bi-lightning-charge"></i>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:0.9rem">Smart Questions</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.8rem">AI-generated quizzes</div>
+    </div>
+  </div>
+  <div class="floating-card">
+    <div class="fc-icon" style="background:rgba(255,101,132,0.15);color:#ff6584">
+      <i class="bi bi-calendar3"></i>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:0.9rem">Study Schedule</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.8rem">Day-by-day plans</div>
+    </div>
+  </div>
+  <div class="floating-card">
+    <div class="fc-icon" style="background:rgba(52,211,153,0.15);color:#34d399">
+      <i class="bi bi-graph-up"></i>
+    </div>
+    <div>
+      <div style="font-weight:700;font-size:0.9rem">Progress Tracking</div>
+      <div style="color:rgba(255,255,255,0.4);font-size:0.8rem">Completion & scores</div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-section reveal" id="stats">
+  <div class="stats-grid">
+    <div>
+      <div class="stat-num">4+</div>
+      <div class="stat-label">AI-Powered Features</div>
+    </div>
+    <div>
+      <div class="stat-num">∞</div>
+      <div class="stat-label">Questions Generated</div>
+    </div>
+    <div>
+      <div class="stat-num">100%</div>
+      <div class="stat-label">Personalized to You</div>
+    </div>
+    <div>
+      <div class="stat-num">Free</div>
+      <div class="stat-label">No Credit Card Needed</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">What we offer</div>
+  <h2 class="section-title">Everything you need to <span class="gradient-text">ace your exam</span></h2>
+  <p class="section-sub">Stop wasting time. Start studying with purpose.</p>
+
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(108,99,255,0.15);color:#6c63ff">
+        <i class="bi bi-robot"></i>
+      </div>
+      <h3>AI Tutor Chat</h3>
+      <p>Ask any question about your topic and get instant, detailed explanations — like having a personal teacher available 24/7.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(0,212,255,0.15);color:#00d4ff">
+        <i class="bi bi-lightning-charge"></i>
+      </div>
+      <h3>Question Generator</h3>
+      <p>AI generates MCQ practice questions tailored to your exact syllabus topics — with answers and explanations included.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(255,101,132,0.15);color:#ff6584">
+        <i class="bi bi-calendar3"></i>
+      </div>
+      <h3>Smart Study Schedule</h3>
+      <p>Enter your exam date and topics. AI builds a complete day-by-day study plan with tasks and time allocation.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(52,211,153,0.15);color:#34d399">
+        <i class="bi bi-graph-up-arrow"></i>
+      </div>
+      <h3>Progress Dashboard</h3>
+      <p>Track completion percentage, quiz scores, study hours, and your strongest/weakest topics — all in one place.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(251,191,36,0.15);color:#fbbf24">
+        <i class="bi bi-shield-check"></i>
+      </div>
+      <h3>Secure & Private</h3>
+      <p>Email OTP verification, strong password enforcement, session security, and brute-force protection built in.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon" style="background:rgba(167,139,250,0.15);color:#a78bfa">
+        <i class="bi bi-moon-stars"></i>
+      </div>
+      <h3>Dark / Light / Warm Mode</h3>
+      <p>Study comfortably day or night with three beautiful themes that save your preference automatically.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" style="background:rgba(255,255,255,0.02);border-radius:30px;margin:0 40px;">
+  <div class="section-label">Simple process</div>
+  <h2 class="section-title">Up and running in <span class="gradient-text">4 steps</span></h2>
+  <p class="section-sub">No setup headaches. Just pure learning.</p>
+
+  <div class="steps reveal">
+    <div class="step">
+      <div class="step-num">1</div>
+      <h3>Create Account</h3>
+      <p>Register with email. Verify with a 6-digit OTP for security.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <h3>Add Your Course</h3>
+      <p>Enter your course name, topics, exam date, and daily study hours.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <h3>Let AI Plan</h3>
+      <p>AI generates your schedule, practice questions, and is ready to tutor.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <h3>Study & Track</h3>
+      <p>Take quizzes, chat with AI tutor, and watch your progress grow.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section reveal">
+  <div class="cta-box">
+    <h2>Ready to <span class="gradient-text">ace your exam?</span></h2>
+    <p>Join now and start your AI-powered study session in under 2 minutes. No credit card. No setup.</p>
+    <a href="{% url 'accounts:register' %}" class="btn-primary-hero" style="font-size:1.1rem;padding:16px 48px;">
+      <i class="bi bi-rocket-takeoff"></i> Start Studying Free
+    </a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>⚡ <strong>StudyAI</strong> — Built with Django · Made for students, by students</p>
+  <p style="margin-top:8px">
+    <a href="{% url 'accounts:login' %}" style="color:rgba(255,255,255,0.4);text-decoration:none;margin:0 12px">Login</a>
+    <a href="{% url 'accounts:register' %}" style="color:rgba(255,255,255,0.4);text-decoration:none;margin:0 12px">Register</a>
+  </p>
+</footer>
+
+<script>
+// Particles
+particlesJS("particles-js", {
+  particles: {
+    number: { value: 60, density: { enable: true, value_area: 800 } },
+    color: { value: ["#6c63ff", "#00d4ff", "#ff6584"] },
+    shape: { type: "circle" },
+    opacity: { value: 0.4, random: true },
+    size: { value: 2, random: true },
+    line_linked: { enable: true, distance: 150, color: "#6c63ff", opacity: 0.15, width: 1 },
+    move: { enable: true, speed: 1.2, random: true, out_mode: "out" }
+  },
+  interactivity: {
+    detect_on: "canvas",
+    events: {
+      onhover: { enable: true, mode: "grab" },
+      onclick: { enable: true, mode: "push" }
+    },
+    modes: {
+      grab: { distance: 140, line_linked: { opacity: 0.5 } },
+      push: { particles_nb: 3 }
+    }
+  }
+});
+
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(r => observer.observe(r));
+</script>
+</body>
+</html>

@@ -1,24 +1,40 @@
 import json
 from google import genai
+from google.genai import types
 from django.conf import settings
 
 def generate_questions(topic, course_name, difficulty, count):
-    # Initialize the client with your key from settings
+    # Initialize using the new SDK client pattern
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     
-    prompt = f"""
-    You are an expert tutor for the course {course_name}. 
-    Generate {count} {difficulty} level practice questions about {topic}.
-    Format the output as a clean list.
-    """
+    prompt = f"Generate {count} multiple-choice questions for {course_name} on {topic}. Difficulty: {difficulty}."
 
     try:
+        # Use the stable model name that worked for your scheduler
         response = client.models.generate_content(
-            model="gemini-1.5-flash", # Use the stable name
+            model="gemini-2.5-flash", 
             contents=prompt,
-            config={'response_mime_type': 'application/json'} # Force JSON
+            config=types.GenerateContentConfig(
+                system_instruction="You are an expert exam creator. Return ONLY a JSON array of questions.",
+                response_mime_type='application/json',
+                response_schema={
+                    "type": "ARRAY",
+                    "items": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "question": {"type": "STRING"},
+                            "options": {"type": "ARRAY", "items": {"type": "STRING"}},
+                            "correct_answer": {"type": "STRING"},
+                            "explanation": {"type": "STRING"}
+                        },
+                        "required": ["question", "options", "correct_answer", "explanation"]
+                    }
+                }
+            )
         )
-        return json.loads(response.text)
+        # Directly return the parsed list of dictionaries
+        return response.parsed 
+
     except Exception as e:
-        print(f"Error calling Gemini: {e}")
-        return "Sorry, I couldn't generate questions right now."
+        print(f"Quiz Generation Error: {e}")
+        return []

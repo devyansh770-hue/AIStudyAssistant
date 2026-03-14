@@ -2,53 +2,237 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Register — StudyAI</title>
+  <title>StudyAI — Register</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <style>
-    body { background: linear-gradient(135deg, #1a237e 0%, #0288d1 100%); min-height: 100vh; display: flex; align-items: center; }
-    .card { border-radius: 16px; border: none; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    body { margin:0; min-height:100vh; display:flex; }
+    .left-panel {
+      width:55%; background:linear-gradient(135deg,#1a237e 0%,#0288d1 100%);
+      display:flex; flex-direction:column; justify-content:center;
+      padding:60px; color:white;
+    }
+    .right-panel {
+      width:45%; display:flex; align-items:center;
+      justify-content:center; padding:40px; background:#f8f9fa;
+      overflow-y:auto;
+    }
+    .card { border-radius:16px; border:none; box-shadow:0 8px 30px rgba(0,0,0,0.1); width:100%; max-width:420px; }
+    .feature-item { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    .feature-icon { width:40px; height:40px; background:rgba(255,255,255,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
+    .form-control { border-radius:8px; padding:10px 14px; border:1px solid #dee2e6; }
+    .form-control:focus { border-color:#0288d1; box-shadow:0 0 0 3px rgba(2,136,209,0.15); }
+    .btn-register { background:linear-gradient(135deg,#1a237e,#0288d1); border:none; border-radius:8px; padding:12px; font-weight:700; font-size:1rem; }
+    .btn-register:hover { opacity:0.9; transform:translateY(-1px); }
+    .strength-bar { height:4px; border-radius:2px; transition:all 0.3s; margin-top:5px; background:#e0e0e0; }
+    .strength-fill { height:100%; border-radius:2px; transition:all 0.3s; width:0%; }
+    .req-item { font-size:0.75rem; display:flex; align-items:center; gap:5px; margin-bottom:3px; color:#999; }
+    .req-item.ok { color:#2e7d32; }
+    .req-item i { font-size:0.7rem; }
+    @media(max-width:768px){ .left-panel{display:none;} .right-panel{width:100%;} }
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card p-4 p-md-5">
-        <div class="text-center mb-4">
-          <i class="bi bi-mortarboard-fill text-primary" style="font-size:2.5rem"></i>
-          <h2 class="fw-bold mt-2" style="color:#1a237e">Create Account</h2>
-          <p class="text-muted">Start your AI-powered study journey</p>
-        </div>
-        {% if messages %}
-          {% for msg in messages %}
-            <div class="alert alert-danger">{{ msg }}</div>
-          {% endfor %}
-        {% endif %}
-        <form method="post">
-          {% csrf_token %}
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Username</label>
-            {{ form.username }}
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Email</label>
-            {{ form.email }}
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Password</label>
-            {{ form.password1 }}
-          </div>
-          <div class="mb-4">
-            <label class="form-label fw-semibold">Confirm Password</label>
-            {{ form.password2 }}
-          </div>
-          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Create Account</button>
-        </form>
-        <p class="text-center mt-3 text-muted">Already have an account? <a href="{% url 'accounts:login' %}">Login</a></p>
-      </div>
-    </div>
+
+<!-- Left Panel -->
+<div class="left-panel">
+  <div class="mb-4">
+    <i class="bi bi-mortarboard-fill" style="font-size:2.5rem"></i>
+    <h2 class="fw-bold mt-2">StudyAI</h2>
+    <p class="opacity-75">Your AI-powered study companion</p>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon"><i class="bi bi-robot"></i></div>
+    <div><strong>AI Tutor</strong><br/><small class="opacity-75">Get instant answers to any topic</small></div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon"><i class="bi bi-lightning-charge"></i></div>
+    <div><strong>Smart Questions</strong><br/><small class="opacity-75">AI-generated practice quizzes</small></div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
+    <div><strong>Study Schedule</strong><br/><small class="opacity-75">Personalized day-by-day plans</small></div>
+  </div>
+  <div class="feature-item">
+    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+    <div><strong>Secure & Verified</strong><br/><small class="opacity-75">OTP email verification</small></div>
   </div>
 </div>
+
+<!-- Right Panel -->
+<div class="right-panel">
+  <div class="card p-4">
+    <div class="text-center mb-3">
+      <i class="bi bi-mortarboard-fill text-primary" style="font-size:2rem"></i>
+      <h4 class="fw-bold mt-1" style="color:#1a237e">Create Account</h4>
+      <p class="text-muted small mb-0">Start your AI-powered study journey</p>
+    </div>
+
+    <!-- Django Messages -->
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 small" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Form Errors -->
+    {% if form.errors %}
+      <div class="alert alert-danger py-2 small">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <div><i class="bi bi-exclamation-circle"></i> <strong>{{ field.label }}:</strong> {{ error }}</div>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <div><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" id="registerForm">
+      {% csrf_token %}
+
+      <!-- Username -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Username</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-person"></i></span>
+          <input type="text" name="username" class="form-control"
+                 placeholder="Choose a username"
+                 value="{{ form.username.value|default:'' }}" required/>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Email</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input type="email" name="email" class="form-control"
+                 placeholder="your@email.com"
+                 value="{{ form.email.value|default:'' }}" required/>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-2">
+        <label class="form-label fw-semibold small">Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" name="password1" class="form-control"
+                 placeholder="Create strong password"
+                 id="password1" required/>
+          <button class="btn btn-outline-secondary" type="button"
+                  onclick="togglePwd('password1', this)">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <!-- Strength bar -->
+        <div class="strength-bar mt-1">
+          <div class="strength-fill" id="strengthFill"></div>
+        </div>
+        <small id="strengthText" class="text-muted"></small>
+        <!-- Requirements -->
+        <div class="mt-2 p-2 rounded" style="background:#f8f9fa">
+          <div class="req-item" id="req-len"><i class="bi bi-circle"></i> At least 8 characters</div>
+          <div class="req-item" id="req-upper"><i class="bi bi-circle"></i> One uppercase letter (A-Z)</div>
+          <div class="req-item" id="req-lower"><i class="bi bi-circle"></i> One lowercase letter (a-z)</div>
+          <div class="req-item" id="req-num"><i class="bi bi-circle"></i> One number (0-9)</div>
+          <div class="req-item" id="req-special"><i class="bi bi-circle"></i> One special character (!@#$%)</div>
+        </div>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Confirm Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+          <input type="password" name="password2" class="form-control"
+                 placeholder="Confirm your password"
+                 id="password2" required/>
+          <button class="btn btn-outline-secondary" type="button"
+                  onclick="togglePwd('password2', this)">
+            <i class="bi bi-eye"></i>
+          </button>
+        </div>
+        <small id="matchText"></small>
+      </div>
+
+      <button type="submit" class="btn btn-register w-100 text-white mt-1">
+        <i class="bi bi-person-plus"></i> Create Account
+      </button>
+    </form>
+
+    <p class="text-center mt-3 text-muted small">
+      Already have an account?
+      <a href="{% url 'accounts:login' %}" class="fw-bold text-primary">Login</a>
+    </p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function togglePwd(id, btn) {
+  const el = document.getElementById(id);
+  const icon = btn.querySelector('i');
+  if (el.type === 'password') {
+    el.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    el.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
+}
+
+// Password strength checker
+document.getElementById('password1').addEventListener('input', function() {
+  const v = this.value;
+  const checks = {
+    'req-len':     v.length >= 8,
+    'req-upper':   /[A-Z]/.test(v),
+    'req-lower':   /[a-z]/.test(v),
+    'req-num':     /\d/.test(v),
+    'req-special': /[!@#$%^&*(),.?":{}|<>\-_]/.test(v),
+  };
+  let score = Object.values(checks).filter(Boolean).length;
+
+  // Update req items
+  Object.entries(checks).forEach(([id, ok]) => {
+    const el = document.getElementById(id);
+    el.className = 'req-item' + (ok ? ' ok' : '');
+    el.querySelector('i').className = ok
+      ? 'bi bi-check-circle-fill'
+      : 'bi bi-circle';
+  });
+
+  // Strength bar
+  const fill = document.getElementById('strengthFill');
+  const text = document.getElementById('strengthText');
+  const colors = ['#ef5350','#ff7043','#ffa726','#66bb6a','#43a047'];
+  const labels = ['Very Weak','Weak','Fair','Strong','Very Strong'];
+  fill.style.width = (score * 20) + '%';
+  fill.style.background = colors[score - 1] || '#e0e0e0';
+  text.textContent = score > 0 ? labels[score - 1] : '';
+  text.style.color = colors[score - 1] || '#999';
+});
+
+// Password match checker
+document.getElementById('password2').addEventListener('input', function() {
+  const p1 = document.getElementById('password1').value;
+  const matchEl = document.getElementById('matchText');
+  if (this.value === '') {
+    matchEl.textContent = '';
+  } else if (this.value === p1) {
+    matchEl.textContent = '✓ Passwords match';
+    matchEl.style.color = '#2e7d32';
+  } else {
+    matchEl.textContent = '✗ Passwords do not match';
+    matchEl.style.color = '#c62828';
+  }
+});
+</script>
 </body>
 </html>

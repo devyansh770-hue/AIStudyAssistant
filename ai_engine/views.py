@@ -14,15 +14,14 @@ logger = logging.getLogger(__name__)
 @login_required
 def view_schedule(request, course_id):
     course = get_object_or_404(Course, pk=course_id, user=request.user)
-    schedule = None # None means the "Generate" button will show
+    schedule = None 
     
     if request.method == 'POST':
-        days_left = course.days_until_exam()
-        if days_left <= 0:
-            days_left = 7
+        # Default to 7 days if the calculation fails or is 0
+        days_left = course.days_until_exam() or 7
             
-        # Get the schedule from our service
-        result = generate_schedule(
+        # Call the service - now returns a list of dictionaries
+        schedule = generate_schedule(
             course.name,
             course.topics,
             str(course.exam_date),
@@ -30,39 +29,30 @@ def view_schedule(request, course_id):
             course.complexity,
             course.daily_study_hours
         )
-        
-        # Double check: if result is still a string (rare), parse it
-        if isinstance(result, str):
-            try:
-                schedule = json.loads(result)
-            except:
-                schedule = []
-        else:
-            schedule = result
 
     return render(request, 'ai_engine/schedule.html', {
         'course': course,
         'schedule': schedule,
     })
 
-# --- Other views remain the same, but here is the logic for Questions ---
-
 @login_required
 @require_POST
 def api_generate_questions(request):
     try:
         data = json.loads(request.body)
-        course_id = data.get('course_id')
-        topic = data.get('topic', '')
-        difficulty = data.get('difficulty', 'medium')
-        count = int(data.get('count', 5))
+        course = get_object_or_404(Course, pk=data.get('course_id'), user=request.user)
+        
+        questions = generate_questions(
+            data.get('topic', ''), 
+            course.name, 
+            data.get('difficulty', 'medium'), 
+            int(data.get('count', 5))
+        )
 
-        course = get_object_or_404(Course, pk=course_id, user=request.user)
-        questions = generate_questions(topic, course.name, difficulty, count)
-
+        # Return questions as part of a dict; JsonResponse handles this well
         return JsonResponse({'success': True, 'questions': questions})
     except Exception as e:
-        logger.error(f"Question Generation Error: {e}")
+        logger.error(f"Quiz Generation Error: {e}") # Log to terminal
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required
@@ -91,11 +81,13 @@ def api_tutor_chat(request):
         question = data.get('question', '')
         course_id = data.get('course_id')
         topic = data.get('topic', 'General')
-        history = data.get('history', [])
+        # Ensure history is a list even if front-end sends nothing
+        history = data.get('history') or []
 
         course = get_object_or_404(Course, pk=course_id, user=request.user)
         answer = ask_tutor(question, course.name, topic, history)
 
         return JsonResponse({'success': True, 'answer': answer})
     except Exception as e:
+        logger.error(f"Tutor Chat Error: {e}") # Log to terminal
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
