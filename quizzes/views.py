@@ -26,7 +26,6 @@ def quiz_attempt(request, course_id):
     course = get_object_or_404(Course, pk=course_id, user=request.user)
     topics = course.get_topics_list()
     
-    # Get parameters from URL
     topic = request.GET.get('topic', topics[0] if topics else 'General')
     difficulty = request.GET.get('difficulty', 'medium')
     try:
@@ -34,10 +33,8 @@ def quiz_attempt(request, course_id):
     except (ValueError, TypeError):
         count = 5
 
-    # Generate AI questions
     raw_data = generate_questions(topic, course.name, difficulty, count)
 
-    # SAFETY CHECK: If the service returned a string, try to parse it as JSON
     if isinstance(raw_data, str):
         try:
             raw_questions = json.loads(raw_data)
@@ -48,14 +45,15 @@ def quiz_attempt(request, course_id):
 
     question_list = []
     
-    # Ensure we are iterating over a list
     if isinstance(raw_questions, list):
         for q in raw_questions:
-            # Skip if q is not a dictionary (prevents the 'str' object has no attribute 'get' error)
             if not isinstance(q, dict):
                 continue
                 
             options = q.get('options', [])
+            # FIX: Ensure field names match your question_generator.py schema
+            correct_val = q.get('correct_answer', '') # Changed from 'answer' to 'correct_answer'
+            
             if len(options) >= 4:
                 obj = Question.objects.create(
                     course=course,
@@ -65,7 +63,7 @@ def quiz_attempt(request, course_id):
                     option_b=options[1],
                     option_c=options[2],
                     option_d=options[3],
-                    correct_answer=q.get('answer', ''),
+                    correct_answer=correct_val,
                     explanation=q.get('explanation', ''),
                     difficulty=difficulty,
                 )
@@ -78,7 +76,7 @@ def quiz_attempt(request, course_id):
                 })
 
     if not question_list:
-        messages.error(request, 'Failed to generate quiz questions. Please try again or check your API settings.')
+        messages.error(request, 'Failed to generate quiz questions. Please check your API quota.')
         return redirect('quizzes:setup', course_id=course_id)
 
     return render(request, 'quizzes/quiz_attempt.html', {
@@ -108,9 +106,16 @@ def quiz_submit(request):
         for qid, selected in answers.items():
             try:
                 q = Question.objects.get(pk=int(qid))
-                is_correct = str(selected).strip() == str(q.correct_answer).strip()
+                
+                # RECTIFIED: More flexible comparison (case-insensitive and trimmed)
+                user_ans = str(selected).strip().lower()
+                correct_ans = str(q.correct_answer).strip().lower()
+                
+                is_correct = user_ans == correct_ans
+                
                 if is_correct:
                     correct += 1
+                
                 results.append({
                     'question': q.question_text,
                     'selected': selected,
@@ -142,6 +147,8 @@ def quiz_submit(request):
             'attempt_id': attempt.id,
         })
     except Exception as e:
+        # Added print for terminal debugging
+        print(f"Error in quiz_submit: {e}")
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 @login_required

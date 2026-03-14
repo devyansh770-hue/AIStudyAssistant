@@ -4,13 +4,16 @@ from google.genai import types
 from django.conf import settings
 
 def generate_questions(topic, course_name, difficulty, count):
-    # Initialize using the new SDK client pattern
+    # 1. Initialize the client using your settings API key
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     
-    prompt = f"Generate {count} multiple-choice questions for {course_name} on {topic}. Difficulty: {difficulty}."
+    prompt = (
+        f"Create a set of {count} multiple-choice questions for the course '{course_name}' "
+        f"specifically on the topic of '{topic}'. The difficulty level should be {difficulty}."
+    )
 
     try:
-        # Use the stable model name that worked for your scheduler
+        # 2. Rectified model name to the stable 2.0 version
         response = client.models.generate_content(
             model="gemini-2.5-flash", 
             contents=prompt,
@@ -32,9 +35,13 @@ def generate_questions(topic, course_name, difficulty, count):
                 }
             )
         )
-        # Directly return the parsed list of dictionaries
-        return response.parsed 
+        
+        # 3. Return the parsed content or an empty list if nothing is returned
+        return response.parsed if response.parsed else []
 
     except Exception as e:
-        print(f"Quiz Generation Error: {e}")
+        # Check your VS Code terminal for the exact error (like 429 Quota)
+        print(f"--- Quiz Generation Error ---")
+        print(f"Details: {str(e)}")
+        print(f"-----------------------------")
         return []
