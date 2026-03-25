@@ -5,38 +5,42 @@
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-7">
-    <div class="card p-4">
-      <h5 class="fw-bold mb-4">
-        <i class="bi bi-{% if edit %}pencil{% else %}plus-circle{% endif %} text-primary"></i>
-        {% if edit %}Edit "{{ course.name }}"{% else %}Create New Course{% endif %}
-      </h5>
+    <div class="card p-4 animate-fade-in-up">
+      <div class="section-header mb-4">
+        <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
+          <i class="bi bi-{% if edit %}pencil{% else %}plus-circle{% endif %}"></i>
+        </div>
+        <h6 style="font-size:1.1rem">{% if edit %}Edit "{{ course.name }}"{% else %}Create New Course{% endif %}</h6>
+      </div>
       <form method="post">
         {% csrf_token %}
         <div class="mb-3">
-          <label class="form-label fw-semibold">Course Name</label>
+          <label class="form-label fw-semibold" style="font-size:0.88rem">Course Name</label>
           {{ form.name }}
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Description</label>
+          <label class="form-label fw-semibold" style="font-size:0.88rem">Description</label>
           {{ form.description }}
         </div>
         <div class="row g-3 mb-3">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Exam Date</label>
+            <label class="form-label fw-semibold" style="font-size:0.88rem">Exam Date</label>
             {{ form.exam_date }}
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">Complexity</label>
+            <label class="form-label fw-semibold" style="font-size:0.88rem">Complexity</label>
             {{ form.complexity }}
           </div>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold">Topics <span class="text-muted">(comma separated)</span></label>
+          <label class="form-label fw-semibold" style="font-size:0.88rem">
+            Topics <span style="color:var(--text-muted);font-weight:400">(comma separated)</span>
+          </label>
           {{ form.topics }}
-          <div class="form-text">e.g. Arrays, Linked Lists, Trees, Sorting</div>
+          <div class="form-text" style="color:var(--text-muted);font-size:0.8rem">e.g. Arrays, Linked Lists, Trees, Sorting</div>
         </div>
         <div class="mb-4">
-          <label class="form-label fw-semibold">Daily Study Hours Goal</label>
+          <label class="form-label fw-semibold" style="font-size:0.88rem">Daily Study Hours Goal</label>
           {{ form.daily_study_hours }}
         </div>
         <div class="d-flex gap-2">
@@ -44,7 +48,7 @@
             <i class="bi bi-check-lg"></i> {% if edit %}Save Changes{% else %}Create Course{% endif %}
           </button>
           <a href="{% if edit %}{% url 'courses:detail' course.pk %}{% else %}{% url 'courses:list' %}{% endif %}"
-             class="btn btn-outline-secondary">Cancel</a>
+             class="btn btn-outline-secondary" style="border-radius:var(--radius-sm)">Cancel</a>
         </div>
       </form>
     </div>

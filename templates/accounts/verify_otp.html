@@ -2,15 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Verify Email — StudyAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <style>
-    body{background:linear-gradient(135deg,#0a0a1a,#090979);min-height:100vh;display:flex;align-items:center;color:white;}
-    .card{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;backdrop-filter:blur(20px);}
-    .otp-input{background:rgba(255,255,255,0.1)!important;border:2px solid rgba(108,99,255,0.5)!important;color:white!important;border-radius:12px;font-size:2rem;letter-spacing:16px;text-align:center;padding:16px;}
-    .otp-input:focus{border-color:#6c63ff!important;box-shadow:0 0 20px rgba(108,99,255,0.4)!important;}
-    .btn-verify{background:linear-gradient(135deg,#6c63ff,#00d4ff);border:none;border-radius:12px;padding:14px;font-weight:700;font-size:1rem;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Inter',sans-serif;
+      background:linear-gradient(135deg,#06060f,#0f172a,#1e1b4b);
+      min-height:100vh;display:flex;align-items:center;color:white;
+      -webkit-font-smoothing:antialiased;
+    }
+    .card{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:24px;
+      backdrop-filter:blur(20px);
+      -webkit-backdrop-filter:blur(20px);
+      animation:fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .otp-input{
+      background:rgba(255,255,255,0.06)!important;
+      border:2px solid rgba(99,102,241,0.3)!important;
+      color:white!important;border-radius:14px;
+      font-size:2rem;letter-spacing:16px;text-align:center;padding:16px;
+      transition:all 0.2s;
+    }
+    .otp-input:focus{
+      border-color:#6366f1!important;
+      box-shadow:0 0 20px rgba(99,102,241,0.3)!important;
+    }
+    .btn-verify{
+      background:linear-gradient(135deg,#6366f1,#06b6d4);
+      border:none;border-radius:14px;padding:14px;
+      font-weight:700;font-size:1rem;
+      transition:all 0.3s;
+    }
+    .btn-verify:hover{
+      transform:translateY(-2px);
+      box-shadow:0 4px 16px rgba(99,102,241,0.35);
+    }
+    .resend-btn{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:25px;color:white;
+      transition:all 0.2s;
+    }
+    .resend-btn:hover{
+      background:rgba(99,102,241,0.15);
+      border-color:rgba(99,102,241,0.3);
+      color:white;
+    }
+    .alert{border-radius:12px;border:none;font-size:0.85rem;}
   </style>
 </head>
 <body>
@@ -21,9 +69,9 @@
         <div class="text-center mb-4">
           <div style="font-size:3rem">📧</div>
           <h4 class="fw-bold mt-2">Check Your Email</h4>
-          <p class="text-white-50 small">
+          <p style="color:rgba(255,255,255,0.45);font-size:0.88rem">
             We sent a 6-digit OTP to<br/>
-            <strong class="text-white">{{ email }}</strong>
+            <strong style="color:white">{{ email }}</strong>
           </p>
           {% if attempts_left < 5 %}
           <div class="alert alert-warning py-2 small">
@@ -43,7 +91,7 @@
         <form method="post">
           {% csrf_token %}
           <div class="mb-4">
-            <label class="form-label text-white-50 small">Enter 6-digit OTP</label>
+            <label class="form-label small" style="color:rgba(255,255,255,0.45)">Enter 6-digit OTP</label>
             {{ form.code }}
           </div>
           <button type="submit" class="btn btn-verify w-100 text-white">
@@ -52,16 +100,14 @@
         </form>
 
         <div class="text-center mt-4">
-          <p class="text-white-50 small">Didn't receive the code?</p>
-          <a href="{% url 'accounts:resend_otp' %}"
-             class="btn btn-outline-light btn-sm rounded-pill">
+          <p style="color:rgba(255,255,255,0.4);font-size:0.82rem">Didn't receive the code?</p>
+          <a href="{% url 'accounts:resend_otp' %}" class="btn resend-btn btn-sm px-4">
             <i class="bi bi-arrow-repeat"></i> Resend OTP
           </a>
         </div>
 
-        <!-- Countdown -->
-        <p class="text-center text-white-50 small mt-3">
-          OTP expires in <span id="countdown" style="color:#00d4ff;font-weight:700">10:00</span>
+        <p class="text-center small mt-3" style="color:rgba(255,255,255,0.35)">
+          OTP expires in <span id="countdown" style="color:#06b6d4;font-weight:700;font-family:'Inter',monospace">10:00</span>
         </p>
       </div>
     </div>
@@ -75,7 +121,7 @@ const interval = setInterval(() => {
   const m = String(Math.floor(t/60)).padStart(2,'0');
   const s = String(t%60).padStart(2,'0');
   el.textContent = `${m}:${s}`;
-  if (t <= 0) { clearInterval(interval); el.textContent = 'Expired'; el.style.color = '#ff6584'; }
+  if (t <= 0) { clearInterval(interval); el.textContent = 'Expired'; el.style.color = '#f43f5e'; }
 }, 1000);
 </script>
 </body>

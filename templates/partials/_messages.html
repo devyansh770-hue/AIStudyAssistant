@@ -1,6 +1,7 @@
 {% if messages %}
   {% for message in messages %}
-    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show animate-fade-in-up" role="alert" style="border-radius:var(--radius-md);border:none;font-size:0.88rem">
+      <i class="bi bi-{% if 'error' in message.tags or 'danger' in message.tags %}exclamation-circle{% elif 'success' in message.tags %}check-circle{% else %}info-circle{% endif %} me-1"></i>
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>

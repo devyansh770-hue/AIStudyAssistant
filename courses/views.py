@@ -73,6 +73,17 @@ def log_hours(request, pk):
 
 
 @login_required
+def log_experience(request, pk):
+    course = get_object_or_404(Course, pk=pk, user=request.user)
+    if request.method == 'POST':
+        feedback = request.POST.get('experience', '').strip()
+        course.exam_feedback = feedback
+        course.save()
+        messages.success(request, 'Experience logged! We hope you did well.')
+    return redirect('courses:detail', pk=pk)
+
+
+@login_required
 def topic_toggle(request, pk):
     topic = get_object_or_404(Topic, pk=pk, course__user=request.user)
     topic.is_completed = not topic.is_completed

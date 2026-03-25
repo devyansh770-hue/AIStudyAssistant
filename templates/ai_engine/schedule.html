@@ -2,57 +2,155 @@
 {% block title %}Study Schedule — {{ course.name }}{% endblock %}
 {% block page_title %}AI Study Schedule{% endblock %}
 
+{% block extra_css %}
+<style>
+  .schedule-day {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    transition: all var(--transition-fast);
+    border: 1px solid var(--border-light);
+    animation: fadeInUp 0.4s ease-out both;
+  }
+  .schedule-day:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateX(4px);
+  }
+  .schedule-day:nth-child(odd) { background: var(--bg-tertiary); }
+  .schedule-day:nth-child(even) { background: var(--bg-secondary); }
+
+  .day-number {
+    text-align: center;
+    min-width: 52px;
+    flex-shrink: 0;
+  }
+  .day-number .label { font-weight: 700; color: var(--primary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+  .day-number .num { font-weight: 800; font-size: 1.5rem; color: var(--text-primary); line-height: 1; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row g-4">
   <div class="col-md-4">
-    <div class="card p-3">
-      <h6 class="fw-bold mb-3"><i class="bi bi-calendar3 text-success"></i> {{ course.name }}</h6>
-      <p class="text-muted small mb-1">Exam Date</p>
-      <p class="fw-semibold text-danger">{{ course.exam_date }}</p>
-      <p class="text-muted small mb-1">Days Remaining</p>
-      <p class="fw-bold text-danger" style="font-size:1.5rem">{{ course.days_until_exam }}</p>
-      <p class="text-muted small mb-1">Topics</p>
-      <p class="text-dark">{{ course.topics }}</p>
-      <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-ai w-100 mt-2">
-          <i class="bi bi-robot"></i> Generate AI Schedule
-        </button>
-      </form>
+    <div class="card p-4 animate-fade-in-up">
+      <div class="section-header">
+        <div class="section-icon" style="background:var(--success-light);color:var(--success)">
+          <i class="bi bi-calendar3"></i>
+        </div>
+        <h6>{{ course.name }}</h6>
+      </div>
+
+      <div class="mb-3">
+        <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Exam Date</small>
+        <p class="fw-semibold" style="color:var(--danger)">{{ course.exam_date }}</p>
+      </div>
+
+      <div class="mb-3">
+        <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">{% if is_exam_over %}Status{% else %}Days Remaining{% endif %}</small>
+        {% if is_exam_over %}
+          <p class="fw-bold" style="color:var(--warning);font-size:1.5rem;line-height:1">Exam Over</p>
+        {% else %}
+          <p class="fw-bold" style="color:var(--danger);font-size:2rem;line-height:1">{{ course.days_until_exam }}</p>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Topics</small>
+        <p style="color:var(--text-secondary);font-size:0.88rem;line-height:1.6">{{ course.topics }}</p>
+      </div>
+
+      {% if is_exam_over %}
+        <div class="alert alert-warning mb-3" style="border-radius:var(--radius-md);border:none;background:var(--warning-light);color:var(--text-primary)">
+          <i class="bi bi-clock-history text-warning"></i> This exam date has passed.
+        </div>
+        
+        {% if not course.exam_feedback %}
+          <form method="post" action="{% url 'courses:log_experience' course.pk %}" class="mt-4">
+            {% csrf_token %}
+            <label class="form-label fw-semibold" style="font-size:0.88rem">How did the exam go?</label>
+            <textarea name="experience" class="form-control mb-3" rows="3" placeholder="Share your experience... It will help the AI tutor tailor future advice!"></textarea>
+            <button type="submit" class="btn btn-warning w-100 fw-bold" style="color:white;font-size:0.95rem">
+              <i class="bi bi-journal-check"></i> Submit Feedback
+            </button>
+          </form>
+        {% else %}
+          <div class="card p-3 mt-3" style="background:var(--bg-tertiary);border:1px dashed var(--border-light)">
+            <label class="fw-semibold mb-1" style="font-size:0.88rem;color:var(--text-muted)">Your Feedback:</label>
+            <p style="font-size:0.9rem;margin:0">{{ course.exam_feedback }}</p>
+          </div>
+        {% endif %}
+
+      {% else %}
+        <form method="post" onsubmit="showLoading(this)">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-ai w-100 mt-2" style="font-size:0.95rem" id="generateBtn">
+            <i class="bi bi-robot"></i> {% if schedule %}Regenerate Schedule{% else %}Generate AI Schedule{% endif %}
+          </button>
+        </form>
+      {% endif %}
     </div>
   </div>
 
   <div class="col-md-8">
     {% if schedule %}
-      <div class="card p-3">
-        <h6 class="fw-bold mb-3">Your Personalized Study Plan</h6>
-        {% for day in schedule %}
-        <div class="d-flex gap-3 p-3 rounded mb-2" style="background:{% cycle '#e3f2fd' '#f3e5f5' '#e8f5e9' '#fff3e0' %}">
-          <div class="text-center" style="min-width:50px">
-            <div class="fw-bold text-primary">Day</div>
-            <div class="fw-bold" style="font-size:1.3rem">{{ day.day }}</div>
+      <div class="card p-4 animate-fade-in-up" style="animation-delay:0.1s">
+        <div class="section-header">
+          <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
+            <i class="bi bi-calendar-check"></i>
           </div>
-          <div class="flex-grow-1">
-            <div class="fw-semibold">{{ day.topic }}</div>
-            <ul class="mb-1 mt-1 ps-3">
-              {% for task in day.tasks %}<li class="small text-muted">{{ task }}</li>{% endfor %}
+          <h6>Your Personalized Study Plan</h6>
+        </div>
+        {% for day in schedule %}
+        <div class="schedule-day" style="animation-delay:{{ forloop.counter0 }}00ms">
+          <div class="day-number">
+            <div class="label">Day</div>
+            <div class="num">{{ day.day }}</div>
+          </div>
+          <div style="flex:1">
+            <div class="fw-semibold" style="font-size:0.95rem;margin-bottom:6px">{{ day.topic }}</div>
+            <ul style="margin:0 0 6px;padding-left:20px">
+              {% for task in day.tasks %}<li style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">{{ task }}</li>{% endfor %}
             </ul>
             {% if day.tip %}
-            <div class="small text-success"><i class="bi bi-lightbulb"></i> {{ day.tip }}</div>
+            <div style="font-size:0.82rem;color:var(--success);display:flex;align-items:center;gap:4px">
+              <i class="bi bi-lightbulb-fill"></i> {{ day.tip }}
+            </div>
             {% endif %}
           </div>
-          <div class="text-end" style="min-width:70px">
-            <span class="badge bg-primary">{{ day.duration_hours }}h</span>
+          <div class="text-end" style="min-width:60px">
+            <span class="badge" style="background:var(--primary-light);color:var(--primary);font-size:0.82rem;padding:6px 12px">{{ day.duration_hours }}h</span>
           </div>
         </div>
         {% endfor %}
       </div>
     {% else %}
-      <div class="card p-5 text-center">
-        <i class="bi bi-calendar-plus text-muted" style="font-size:3rem"></i>
-        <p class="text-muted mt-3">Click "Generate AI Schedule" to create your personalized study plan.</p>
+      <div class="card p-4">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <i class="bi bi-calendar-plus"></i>
+          </div>
+          {% if is_exam_over %}
+            <p>The exam has already passed. A schedule wasn't generated.</p>
+          {% else %}
+            <p>Click "Generate AI Schedule" to create your personalized study plan.</p>
+          {% endif %}
+        </div>
       </div>
     {% endif %}
   </div>
 </div>
+<script>
+function showLoading(form) {
+  const btn = form.querySelector('#generateBtn');
+  if (btn) {
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Generating... (this takes a moment)';
+    btn.classList.add('disabled');
+    // We do not actually disable the button because it causes some browsers to not submit the form.
+    // Adding the disabled class provides visual feedback.
+  }
+}
+</script>
 {% endblock %}

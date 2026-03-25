@@ -18,6 +18,8 @@ class Course(models.Model):
     topics = models.TextField(help_text='Comma separated topics')
     daily_study_hours = models.PositiveIntegerField(default=2)
     hours_spent = models.FloatField(default=0.0)  # NEW
+    ai_schedule = models.JSONField(blank=True, null=True, help_text='Stored AI generated schedule')
+    exam_feedback = models.TextField(blank=True, help_text='User experience/feedback after exam')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

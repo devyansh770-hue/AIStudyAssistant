@@ -2,17 +2,64 @@
 {% block title %}Quiz Setup — {{ course.name }}{% endblock %}
 {% block page_title %}Practice Quiz{% endblock %}
 
+{% block extra_css %}
+<style>
+  .diff-btn {
+    padding: 10px 16px;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600;
+    font-size: 0.88rem;
+    transition: all var(--transition-fast);
+    border-width: 2px !important;
+  }
+  .diff-btn.active-diff {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  .attempt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    transition: all var(--transition-fast);
+    border-left: 3px solid transparent;
+  }
+  .attempt-row:hover { transform: translateX(4px); }
+  .attempt-good { background: var(--success-light); border-left-color: var(--success); }
+  .attempt-mid { background: var(--warning-light); border-left-color: var(--warning); }
+  .attempt-bad { background: var(--danger-light); border-left-color: var(--danger); }
+
+  .topic-practice-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .topic-practice-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row g-4">
-
   <!-- Setup Card -->
   <div class="col-md-5">
-    <div class="card p-4">
-      <h5 class="fw-bold mb-1"><i class="bi bi-question-circle text-primary"></i> Configure Quiz</h5>
-      <p class="text-muted small mb-4">{{ course.name }}</p>
+    <div class="card p-4 animate-fade-in-up">
+      <div class="section-header mb-3">
+        <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <div>
+          <h6 style="font-size:1rem">Configure Quiz</h6>
+          <small style="color:var(--text-muted)">{{ course.name }}</small>
+        </div>
+      </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold">Topic</label>
+        <label class="form-label fw-semibold" style="font-size:0.88rem">Topic</label>
         <select class="form-select" id="topicSel">
           {% for topic in topics %}
             <option value="{{ topic }}">{{ topic }}</option>
@@ -21,7 +68,7 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label fw-semibold">Difficulty</label>
+        <label class="form-label fw-semibold" style="font-size:0.88rem">Difficulty</label>
         <div class="d-flex gap-2">
           <button onclick="setDiff(this,'easy')"
             class="btn btn-outline-success flex-fill diff-btn">Easy</button>
@@ -34,20 +81,20 @@
       </div>
 
       <div class="mb-4">
-        <label class="form-label fw-semibold">
+        <label class="form-label fw-semibold" style="font-size:0.88rem">
           Number of Questions
-          <span class="text-muted fw-normal">(1 – 20, type any number)</span>
+          <span style="color:var(--text-muted);font-weight:400">(1–20)</span>
         </label>
         <input type="number" id="countVal" class="form-control"
                value="5" min="1" max="20" placeholder="e.g. 7"/>
       </div>
 
-      <button class="btn btn-ai w-100 py-2 fw-bold" onclick="startQuiz()">
+      <button class="btn btn-ai w-100 py-2 fw-bold" onclick="startQuiz()" style="font-size:0.95rem">
         <i class="bi bi-play-fill"></i> Start Quiz
       </button>
 
       <a href="{% url 'courses:detail' course.pk %}"
-         class="btn btn-outline-secondary w-100 mt-2">
+         class="btn btn-outline-secondary w-100 mt-2" style="border-radius:var(--radius-sm)">
         <i class="bi bi-arrow-left"></i> Back to Course
       </a>
     </div>
@@ -55,61 +102,65 @@
 
   <!-- Recent Attempts -->
   <div class="col-md-7">
-    <div class="card p-4">
-      <h6 class="fw-bold mb-3">
-        <i class="bi bi-clock-history text-success"></i> Recent Attempts
-      </h6>
+    <div class="card p-4 animate-fade-in-up" style="animation-delay:0.1s">
+      <div class="section-header">
+        <div class="section-icon" style="background:var(--success-light);color:var(--success)">
+          <i class="bi bi-clock-history"></i>
+        </div>
+        <h6>Recent Attempts</h6>
+      </div>
       {% if recent %}
         {% for a in recent %}
-        <div class="d-flex justify-content-between align-items-center p-3 rounded mb-2"
-             style="background:{% if a.score_percent >= 70 %}#e8f5e9{% elif a.score_percent >= 40 %}#fff3e0{% else %}#ffebee{% endif %}">
+        <div class="attempt-row {% if a.score_percent >= 70 %}attempt-good{% elif a.score_percent >= 40 %}attempt-mid{% else %}attempt-bad{% endif %}">
           <div>
-            <div class="fw-semibold">{{ a.topic }}</div>
-            <div class="text-muted small">
+            <div class="fw-semibold" style="font-size:0.9rem">{{ a.topic }}</div>
+            <div style="color:var(--text-muted);font-size:0.78rem">
               {{ a.total_questions }} questions ·
               {{ a.time_taken_seconds }}s · {{ a.created_at|date:"M d, H:i" }}
             </div>
           </div>
           <span class="badge fs-6
             {% if a.score_percent >= 70 %}bg-success
-            {% elif a.score_percent >= 40 %}bg-warning
+            {% elif a.score_percent >= 40 %}bg-warning text-dark
             {% else %}bg-danger{% endif %}">
             {{ a.score_percent }}%
           </span>
         </div>
         {% endfor %}
         <a href="{% url 'quizzes:history' course.pk %}"
-           class="btn btn-sm btn-outline-secondary mt-2">
+           class="btn btn-sm btn-outline-secondary mt-2" style="border-radius:var(--radius-sm)">
           View Full History
         </a>
       {% else %}
-        <div class="text-center py-4">
-          <i class="bi bi-clipboard text-muted" style="font-size:2.5rem"></i>
-          <p class="text-muted mt-2">No attempts yet. Take your first quiz!</p>
+        <div class="empty-state" style="padding:24px 0">
+          <div class="empty-icon" style="width:56px;height:56px;font-size:1.4rem">
+            <i class="bi bi-clipboard"></i>
+          </div>
+          <p style="font-size:0.85rem">No attempts yet. Take your first quiz!</p>
         </div>
       {% endif %}
     </div>
 
     <!-- Topics Progress -->
-    <div class="card p-4 mt-3">
-      <h6 class="fw-bold mb-3">
-        <i class="bi bi-list-check text-primary"></i> Topics Coverage
-      </h6>
+    <div class="card p-4 mt-3 animate-fade-in-up" style="animation-delay:0.15s">
+      <div class="section-header">
+        <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
+          <i class="bi bi-list-check"></i>
+        </div>
+        <h6>Topics Coverage</h6>
+      </div>
       {% for topic in topics %}
-      {% with attempted=recent %}
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <span class="small">{{ topic }}</span>
+      <div class="topic-practice-row">
+        <span style="font-size:0.88rem">{{ topic }}</span>
         <button onclick="quickStart('{{ topic }}')"
-                class="btn btn-xs btn-outline-primary"
-                style="font-size:0.75rem; padding:2px 8px">
+                class="btn btn-sm btn-outline-primary"
+                style="font-size:0.75rem;padding:3px 12px;border-radius:20px">
           Practice
         </button>
       </div>
-      {% endwith %}
       {% endfor %}
     </div>
   </div>
-
 </div>
 {% endblock %}
 
@@ -121,7 +172,7 @@ function setDiff(btn, val) {
   currentDiff = val;
   document.getElementById('diffVal').value = val;
   document.querySelectorAll('.diff-btn').forEach(b => {
-    b.classList.remove('btn-success','btn-warning','btn-danger','text-white');
+    b.classList.remove('btn-success','btn-warning','btn-danger','text-white','active-diff');
     b.classList.add(
       b.textContent.trim() === 'Easy' ? 'btn-outline-success' :
       b.textContent.trim() === 'Medium' ? 'btn-outline-warning' : 'btn-outline-danger'
@@ -131,7 +182,7 @@ function setDiff(btn, val) {
   btn.classList.add(
     val === 'easy' ? 'btn-success' :
     val === 'medium' ? 'btn-warning' : 'btn-danger',
-    'text-white'
+    'text-white', 'active-diff'
   );
 }
 

@@ -2,27 +2,60 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Account Locked — StudyAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
-    body{background:linear-gradient(135deg,#0a0a1a,#1a0000);min-height:100vh;display:flex;align-items:center;justify-content:center;color:white;font-family:'Segoe UI',sans-serif;}
-    .box{text-align:center;padding:60px 40px;background:rgba(255,0,0,0.07);border:1px solid rgba(255,100,100,0.2);border-radius:24px;max-width:420px;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{
+      font-family:'Inter',sans-serif;
+      background:linear-gradient(135deg,#06060f,#1a0505);
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      color:white;-webkit-font-smoothing:antialiased;
+    }
+    .box{
+      text-align:center;padding:56px 40px;
+      background:rgba(244,63,94,0.05);
+      border:1px solid rgba(244,63,94,0.15);
+      border-radius:28px;max-width:440px;
+      backdrop-filter:blur(20px);
+      animation:fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+    .lock-icon{
+      width:80px;height:80px;border-radius:50%;
+      background:rgba(244,63,94,0.1);
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 20px;font-size:2.5rem;
+    }
+    .home-btn{
+      display:inline-block;margin-top:28px;padding:13px 36px;
+      background:linear-gradient(135deg,#6366f1,#06b6d4);
+      color:white;text-decoration:none;border-radius:25px;
+      font-weight:700;font-size:0.95rem;
+      transition:all 0.3s;
+    }
+    .home-btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 4px 16px rgba(99,102,241,0.35);
+      color:white;
+    }
   </style>
 </head>
 <body>
   <div class="box">
-    <div style="font-size:4rem">🔒</div>
-    <h2 style="margin:20px 0 10px;color:#ff6584">Account Temporarily Locked</h2>
-    <p style="color:rgba(255,255,255,0.5);line-height:1.7">
+    <div class="lock-icon">🔒</div>
+    <h2 style="font-weight:800;color:#f43f5e;font-size:1.5rem">Account Temporarily Locked</h2>
+    <p style="color:rgba(255,255,255,0.45);line-height:1.7;margin-top:12px;font-size:0.9rem">
       Too many failed login attempts detected.<br/>
       Your account has been locked for <strong style="color:white">1 hour</strong> for security.
     </p>
-    <p style="color:rgba(255,255,255,0.3);font-size:0.85rem;margin-top:20px">
+    <p style="color:rgba(255,255,255,0.25);font-size:0.82rem;margin-top:16px">
       If this wasn't you, your password may be compromised.<br/>
       Please reset it after the lockout period.
     </p>
-    <a href="/" style="display:inline-block;margin-top:24px;padding:12px 32px;background:linear-gradient(135deg,#6c63ff,#00d4ff);color:white;text-decoration:none;border-radius:25px;font-weight:700;">
-      Go Home
-    </a>
+    <a href="/" class="home-btn">Go Home</a>
   </div>
 </body>
 </html>

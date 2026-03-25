@@ -2,38 +2,129 @@
 {% block title %}Quiz — {{ topic }}{% endblock %}
 {% block page_title %}Practice Quiz{% endblock %}
 
+{% block extra_css %}
+<style>
+  .quiz-header-bar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
+    position: sticky;
+    top: calc(var(--topbar-height) + 12px);
+    z-index: 50;
+  }
+  .timer-badge {
+    background: linear-gradient(135deg, var(--danger), #dc2626);
+    color: white;
+    padding: 6px 16px;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+  }
+
+  .question-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 16px;
+    background: var(--bg-secondary);
+    box-shadow: var(--card-shadow);
+    transition: all var(--transition-fast);
+    animation: fadeInUp 0.4s ease-out both;
+  }
+
+  .option-card {
+    padding: 14px 16px;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+  }
+  .option-card:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+  }
+  .option-card .option-letter {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all var(--transition-fast);
+  }
+  .option-card.selected {
+    border-color: var(--primary) !important;
+    background: var(--primary-light) !important;
+  }
+  .option-card.selected .option-letter {
+    background: var(--primary);
+    color: white;
+  }
+
+  .result-hero {
+    text-align: center;
+    padding: 40px;
+    border-radius: var(--radius-xl);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow-hover);
+    animation: scaleIn 0.4s ease-out;
+  }
+  .result-score {
+    font-size: 4rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 {% csrf_token %}
 
-<div class="card p-3 mb-3">
+<!-- Header Bar -->
+<div class="quiz-header-bar">
   <div class="d-flex justify-content-between align-items-center mb-2">
-    <div>
-      <span class="fw-bold">{{ course.name }}</span>
-      <span class="text-muted mx-2">›</span>
-      <span class="badge bg-primary">{{ topic }}</span>
-      <span class="badge ms-1
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="fw-bold" style="font-size:0.9rem">{{ course.name }}</span>
+      <span style="color:var(--text-muted)">›</span>
+      <span class="topic-pill">{{ topic }}</span>
+      <span class="badge
         {% if difficulty == 'easy' %}bg-success
         {% elif difficulty == 'hard' %}bg-danger
-        {% else %}bg-warning{% endif %}">
+        {% else %}bg-warning text-dark{% endif %}">
         {{ difficulty|capfirst }}
       </span>
     </div>
     <div class="d-flex align-items-center gap-3">
-      <span class="text-muted small" id="progressText">0 / {{ total }} answered</span>
-      <div class="badge bg-danger fs-6" id="timer">00:00</div>
+      <span style="color:var(--text-muted);font-size:0.85rem" id="progressText">0 / {{ total }} answered</span>
+      <div class="timer-badge" id="timer">00:00</div>
     </div>
   </div>
-  <div class="progress" style="height:6px">
-    <div class="progress-bar bg-success" id="progressBar" style="width:0%; transition:width 0.3s"></div>
+  <div class="progress" style="height:5px">
+    <div class="progress-bar" id="progressBar" style="width:0%;background:linear-gradient(90deg,var(--primary),#8b5cf6);transition:width 0.3s"></div>
   </div>
 </div>
 
 <div id="quizContainer"></div>
 
-<div class="card p-3 mt-3" id="submitArea" style="display:none">
+<div class="card p-4 mt-3" id="submitArea" style="display:none">
   <div class="d-flex justify-content-between align-items-center">
-    <span class="text-muted" id="submitHint">Answer all questions to submit</span>
-    <button class="btn btn-primary px-5 fw-bold" onclick="submitQuiz()" id="submitBtn">
+    <span style="color:var(--text-muted)" id="submitHint">Answer all questions to submit</span>
+    <button class="btn btn-ai px-5 fw-bold" onclick="submitQuiz()" id="submitBtn" style="font-size:0.95rem">
       <i class="bi bi-check-circle"></i> Submit Quiz
     </button>
   </div>
@@ -51,7 +142,6 @@ const DIFFICULTY = "{{ difficulty }}";
 let answers = {};
 let seconds = 0;
 
-// Timer Logic
 const timerEl = document.getElementById('timer');
 setInterval(() => {
   seconds++;
@@ -63,24 +153,22 @@ setInterval(() => {
 function renderQuiz() {
   let html = '';
   questions.forEach((q, i) => {
-    // Note: Ensure the question object has an 'id' or use index 'i'
-    const qId = q.id || i; 
+    const qId = q.id || i;
     html += `
-    <div class="card p-4 mb-3" id="qcard-${i}">
+    <div class="question-card" style="animation-delay:${i * 60}ms" id="qcard-${i}">
       <div class="d-flex justify-content-between mb-3">
-        <span class="badge bg-secondary">Q ${i+1} of ${questions.length}</span>
-        <span class="badge bg-light text-dark" id="qstatus-${i}">Not answered</span>
+        <span class="badge" style="background:var(--bg-tertiary);color:var(--text-secondary);font-size:0.78rem">Q ${i+1} of ${questions.length}</span>
+        <span class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:0.75rem" id="qstatus-${i}">Not answered</span>
       </div>
-      <p class="fw-semibold fs-6 mb-3">${q.question}</p>
+      <p class="fw-semibold mb-3" style="font-size:1rem;line-height:1.6">${q.question}</p>
       <div class="row g-2">
         ${q.options.map((opt, j) => `
           <div class="col-md-6">
-            <div class="option-card p-3 rounded border"
+            <div class="option-card"
                  id="opt-${i}-${j}"
-                 onclick="selectAnswer(${i}, '${escStr(opt)}', ${j}, '${qId}')"
-                 style="cursor:pointer; transition:all 0.2s; border-color:#dee2e6!important">
-              <span class="badge me-2" style="background:#e0e0e0;color:#333">${['A','B','C','D'][j]}</span>
-              ${opt}
+                 onclick="selectAnswer(${i}, '${escStr(opt)}', ${j}, '${qId}')">
+              <div class="option-letter">${['A','B','C','D'][j]}</div>
+              <span style="font-size:0.88rem">${opt}</span>
             </div>
           </div>
         `).join('')}
@@ -100,16 +188,15 @@ function selectAnswer(qIndex, answer, optIndex, qId) {
 
   questions[qIndex].options.forEach((_, j) => {
     const el = document.getElementById(`opt-${qIndex}-${j}`);
-    el.style.background   = '';
-    el.style.borderColor  = '#dee2e6';
+    el.classList.remove('selected');
   });
 
   const sel = document.getElementById(`opt-${qIndex}-${optIndex}`);
-  sel.style.background  = '#e3f2fd';
-  sel.style.borderColor = '#0d6efd';
+  sel.classList.add('selected');
 
   document.getElementById(`qstatus-${qIndex}`).textContent = 'Answered ✓';
-  document.getElementById(`qstatus-${qIndex}`).className   = 'badge bg-success';
+  document.getElementById(`qstatus-${qIndex}`).style.background = 'var(--success-light)';
+  document.getElementById(`qstatus-${qIndex}`).style.color = 'var(--success)';
 
   const done = Object.keys(answers).length;
   const pct  = Math.round((done / questions.length) * 100);
@@ -118,7 +205,8 @@ function selectAnswer(qIndex, answer, optIndex, qId) {
 
   if (done === questions.length) {
     document.getElementById('submitHint').textContent = '✅ All answered! Ready to submit.';
-    document.getElementById('submitHint').className   = 'text-success fw-semibold';
+    document.getElementById('submitHint').style.color = 'var(--success)';
+    document.getElementById('submitHint').style.fontWeight = '600';
   }
 }
 
@@ -147,7 +235,6 @@ async function submitQuiz() {
   submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
   submitBtn.disabled = true;
 
-  // Use getCookie AND check the hidden input fallback
   let csrftoken = getCookie('csrftoken');
   if (!csrftoken) {
       csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
@@ -158,7 +245,7 @@ async function submitQuiz() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': csrftoken // This MUST be exact
+        'X-CSRFToken': csrftoken
       },
       body: JSON.stringify({
         course_id: COURSE_ID,
@@ -188,21 +275,26 @@ function showResults(data) {
   document.getElementById('quizContainer').style.display = 'none';
   document.getElementById('submitArea').style.setProperty('display', 'none', 'important');
 
-  const color = data.score >= 70 ? 'success' : data.score >= 40 ? 'warning' : 'danger';
+  const color = data.score >= 70 ? 'var(--success)' : data.score >= 40 ? 'var(--warning)' : 'var(--danger)';
   const emoji = data.score >= 70 ? '🎉' : data.score >= 40 ? '📚' : '💪';
-  
+  const message = data.score >= 70 ? 'Excellent work!' : data.score >= 40 ? 'Good effort, keep practicing!' : 'Don\'t give up! Practice more.';
+
   let html = `
-  <div class="card p-4 mb-4 text-center shadow-sm">
-    <div style="font-size:3rem">${emoji}</div>
-    <div class="display-4 fw-bold text-${color} mt-2">${data.score}%</div>
-    <p class="text-muted">${data.correct} correct out of ${data.total}</p>
-    <div class="d-flex justify-content-center gap-3 mt-3">
-      <a href="/quizzes/setup/${COURSE_ID}/" class="btn btn-primary">Retake</a>
-      <a href="/dashboard/" class="btn btn-outline-secondary">Dashboard</a>
+  <div class="result-hero mb-4">
+    <div style="font-size:3.5rem;margin-bottom:12px">${emoji}</div>
+    <div class="result-score" style="color:${color}">${data.score}%</div>
+    <p style="color:var(--text-secondary);margin:12px 0 4px;font-size:1rem">${message}</p>
+    <p style="color:var(--text-muted);font-size:0.88rem">${data.correct} correct out of ${data.total} questions</p>
+    <div class="d-flex justify-content-center gap-3 mt-4">
+      <a href="/quizzes/setup/${COURSE_ID}/" class="btn btn-ai px-4">
+        <i class="bi bi-arrow-repeat"></i> Retake
+      </a>
+      <a href="/dashboard/" class="btn btn-outline-secondary px-4" style="border-radius:var(--radius-sm)">
+        <i class="bi bi-grid"></i> Dashboard
+      </a>
     </div>
   </div>`;
-  
-  // Question review loop remains the same...
+
   const el = document.getElementById('resultsArea');
   el.innerHTML = html;
   el.style.display = 'block';

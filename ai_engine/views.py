@@ -14,25 +14,30 @@ logger = logging.getLogger(__name__)
 @login_required
 def view_schedule(request, course_id):
     course = get_object_or_404(Course, pk=course_id, user=request.user)
-    schedule = None 
+    days_left = course.days_until_exam()
+    is_exam_over = days_left < 0
+    
+    # Load cached schedule if it exists
+    schedule = course.ai_schedule
     
     if request.method == 'POST':
-        # Default to 7 days if the calculation fails or is 0
-        days_left = course.days_until_exam() or 7
-            
-        # Call the service - now returns a list of dictionaries
-        schedule = generate_schedule(
-            course.name,
-            course.topics,
-            str(course.exam_date),
-            days_left,
-            course.complexity,
-            course.daily_study_hours
-        )
+        if not is_exam_over:
+            # Generate new schedule and save it
+            schedule = generate_schedule(
+                course.name,
+                course.topics,
+                str(course.exam_date),
+                max(days_left, 1),
+                course.complexity,
+                course.daily_study_hours
+            )
+            course.ai_schedule = schedule
+            course.save()
 
     return render(request, 'ai_engine/schedule.html', {
         'course': course,
         'schedule': schedule,
+        'is_exam_over': is_exam_over,
     })
 
 @login_required

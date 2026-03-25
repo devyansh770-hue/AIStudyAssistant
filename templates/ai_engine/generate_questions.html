@@ -2,17 +2,77 @@
 {% block title %}Generate Questions — {{ course.name }}{% endblock %}
 {% block page_title %}AI Question Generator{% endblock %}
 
+{% block extra_css %}
+<style>
+  .question-output-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 12px;
+    background: var(--bg-secondary);
+    box-shadow: var(--card-shadow);
+    animation: fadeInUp 0.3s ease-out both;
+  }
+  .option-display {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    transition: all var(--transition-fast);
+  }
+  .option-correct {
+    background: var(--success-light);
+    border: 1px solid rgba(16,185,129,0.2);
+  }
+  .option-correct .opt-text { color: var(--success); font-weight: 600; }
+  .option-normal {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-light);
+    color: var(--text-muted);
+  }
+  .explanation-box {
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    background: var(--warning-light);
+    border-left: 3px solid var(--warning);
+    font-size: 0.85rem;
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+
+  .loading-pulse {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 0;
+  }
+  .loading-pulse .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row g-4">
-
   <!-- Controls -->
   <div class="col-md-4">
-    <div class="card p-3">
-      <h6 class="fw-bold mb-3">
-        <i class="bi bi-lightning-charge text-warning"></i> Generate Questions
-      </h6>
+    <div class="card p-4 animate-fade-in-up">
+      <div class="section-header">
+        <div class="section-icon" style="background:var(--warning-light);color:var(--warning)">
+          <i class="bi bi-lightning-charge-fill"></i>
+        </div>
+        <h6>Generate Questions</h6>
+      </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">Topic</label>
+        <label class="form-label fw-semibold" style="font-size:0.88rem">Topic</label>
         <select class="form-select" id="topicSelect">
           {% for topic in topics %}
             <option value="{{ topic }}"
@@ -23,7 +83,7 @@
         </select>
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">Difficulty</label>
+        <label class="form-label fw-semibold" style="font-size:0.88rem">Difficulty</label>
         <select class="form-select" id="difficultySelect">
           <option value="easy">Easy</option>
           <option value="medium" selected>Medium</option>
@@ -31,18 +91,18 @@
         </select>
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">
+        <label class="form-label fw-semibold" style="font-size:0.88rem">
           Number of Questions
-          <span class="text-muted fw-normal">(1–20)</span>
+          <span style="color:var(--text-muted);font-weight:400">(1–20)</span>
         </label>
         <input type="number" id="countSelect" class="form-control"
                value="5" min="1" max="20"/>
       </div>
-      <button class="btn btn-ai w-100 fw-bold" onclick="generateQuestions()">
+      <button class="btn btn-ai w-100 fw-bold" onclick="generateQuestions()" style="font-size:0.95rem">
         <i class="bi bi-robot"></i> Generate with AI
       </button>
       <a href="{% url 'courses:detail' course.pk %}"
-         class="btn btn-outline-secondary w-100 mt-2">
+         class="btn btn-outline-secondary w-100 mt-2" style="border-radius:var(--radius-sm)">
         <i class="bi bi-arrow-left"></i> Back to Course
       </a>
     </div>
@@ -50,17 +110,17 @@
 
   <!-- Output -->
   <div class="col-md-8">
-
     <!-- Loading -->
-    <div id="loadingBox" class="card p-5 text-center d-none">
-      <div class="spinner-border text-primary mb-3 mx-auto"></div>
-      <p class="text-muted fw-semibold">AI is generating questions...</p>
-      <p class="text-muted small">This takes 5–10 seconds</p>
+    <div id="loadingBox" class="card p-4 d-none">
+      <div class="loading-pulse">
+        <div class="spinner mb-3"></div>
+        <p class="fw-semibold" style="color:var(--text-primary);font-size:0.95rem">AI is generating questions...</p>
+        <p style="color:var(--text-muted);font-size:0.82rem">This takes 5–10 seconds</p>
+      </div>
     </div>
 
     <!-- Questions Output -->
     <div id="questionsBox"></div>
-
   </div>
 </div>
 {% endblock %}
@@ -104,64 +164,62 @@ async function generateQuestions() {
     if (data.success && data.questions && data.questions.length > 0) {
       renderQuestions(data.questions, topic, difficulty, count);
     } else {
-      // Updated error message to be more accurate
-      document.getElementById('questionsBox').innerHTML = 
-        `<div class="alert alert-warning">
+      document.getElementById('questionsBox').innerHTML =
+        `<div class="alert alert-warning" style="border-radius:var(--radius-md)">
            <i class="bi bi-exclamation-triangle"></i>
            Failed to generate questions. Check your console and GEMINI_API_KEY.
          </div>`;
     }
   } catch(e) {
     document.getElementById('loadingBox').classList.add('d-none');
-    document.getElementById('questionsBox').innerHTML = 
-      `<div class="alert alert-danger">Network error. Make sure server is running.</div>`;
+    document.getElementById('questionsBox').innerHTML =
+      `<div class="alert alert-danger" style="border-radius:var(--radius-md)">Network error. Make sure server is running.</div>`;
   }
 }
 
 function renderQuestions(questions, topic, difficulty, count) {
   let html = `
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <span class="fw-bold text-dark">${questions.length} Questions</span>
-      <span class="badge bg-primary ms-2">${topic}</span>
-      <span class="badge ms-1 
-        ${difficulty==='easy'?'bg-success':difficulty==='hard'?'bg-danger':'bg-warning'}">
+    <div class="d-flex align-items-center gap-2">
+      <span class="fw-bold">${questions.length} Questions</span>
+      <span class="topic-pill">${topic}</span>
+      <span class="badge
+        ${difficulty==='easy'?'bg-success':difficulty==='hard'?'bg-danger':'bg-warning text-dark'}">
         ${difficulty}
       </span>
     </div>
-    <a href="/quizzes/attempt/${COURSE_ID}/?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}&count=${count}" 
-       class="btn btn-sm btn-primary">
+    <a href="/quizzes/attempt/${COURSE_ID}/?topic=${encodeURIComponent(topic)}&difficulty=${difficulty}&count=${count}"
+       class="btn btn-sm btn-ai">
       <i class="bi bi-play-fill"></i> Take as Quiz
     </a>
   </div>`;
 
   questions.forEach((q, i) => {
-    // FIX: Use q.correct_answer to match your Python service
-    const correctAnswer = q.correct_answer || q.answer; 
+    const correctAnswer = q.correct_answer || q.answer;
 
     html += `
-    <div class="card p-3 mb-3 border-0 shadow-sm">
-      <p class="fw-semibold mb-2">${i+1}. ${q.question}</p>
+    <div class="question-output-card" style="animation-delay:${i * 60}ms">
+      <p class="fw-semibold mb-2" style="font-size:0.95rem">${i+1}. ${q.question}</p>
       <div class="row g-2 mb-2">
         ${q.options.map((opt, j) => {
           const isCorrect = opt.trim() === correctAnswer.trim();
           return `
           <div class="col-md-6">
-            <div class="p-2 rounded small ${isCorrect ? 'bg-success bg-opacity-10 border border-success' : 'bg-light border text-muted'}" style="min-height: 45px; display: flex; align-items: center;">
-              <span class="badge me-2" style="background:${isCorrect ? '#198754' : '#6c757d'}; color: white;">
+            <div class="option-display ${isCorrect ? 'option-correct' : 'option-normal'}">
+              <span class="badge" style="background:${isCorrect ? 'var(--success)' : 'var(--text-muted)'};color:white;font-size:0.7rem;padding:3px 7px;border-radius:5px">
                 ${'ABCD'[j]}
               </span>
-              <span class="${isCorrect ? 'text-success fw-bold' : ''}">${opt}</span>
-              ${isCorrect ? '<i class="bi bi-check-circle-fill text-success ms-auto px-2"></i>' : ''}
+              <span class="opt-text">${opt}</span>
+              ${isCorrect ? '<i class="bi bi-check-circle-fill ms-auto" style="color:var(--success)"></i>' : ''}
             </div>
           </div>`;
         }).join('')}
       </div>
-      ${q.explanation 
-        ? `<div class="p-2 rounded small mt-2" style="background:#fff3cd; border-left: 4px solid #ffc107">
-             <i class="bi bi-lightbulb-fill text-warning me-1"></i>
+      ${q.explanation
+        ? `<div class="explanation-box">
+             <i class="bi bi-lightbulb-fill" style="color:var(--warning)"></i>
              <strong>Explanation:</strong> ${q.explanation}
-           </div>` 
+           </div>`
         : ''}
     </div>`;
   });

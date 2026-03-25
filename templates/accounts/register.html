@@ -2,73 +2,170 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>StudyAI — Register</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <style>
-    body { margin:0; min-height:100vh; display:flex; }
-    .left-panel {
-      width:55%; background:linear-gradient(135deg,#1a237e 0%,#0288d1 100%);
-      display:flex; flex-direction:column; justify-content:center;
-      padding:60px; color:white;
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;-webkit-font-smoothing:antialiased;}
+
+    .left-panel{
+      width:55%;
+      background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0c4a6e 100%);
+      display:flex;flex-direction:column;justify-content:center;
+      padding:60px 72px;color:white;
+      position:relative;overflow:hidden;
     }
-    .right-panel {
-      width:45%; display:flex; align-items:center;
-      justify-content:center; padding:40px; background:#f8f9fa;
-      overflow-y:auto;
+    .left-panel::before{
+      content:'';position:absolute;top:-20%;right:-15%;
+      width:400px;height:400px;border-radius:50%;
+      background:rgba(99,102,241,0.1);filter:blur(60px);
     }
-    .card { border-radius:16px; border:none; box-shadow:0 8px 30px rgba(0,0,0,0.1); width:100%; max-width:420px; }
-    .feature-item { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
-    .feature-icon { width:40px; height:40px; background:rgba(255,255,255,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; }
-    .form-control { border-radius:8px; padding:10px 14px; border:1px solid #dee2e6; }
-    .form-control:focus { border-color:#0288d1; box-shadow:0 0 0 3px rgba(2,136,209,0.15); }
-    .btn-register { background:linear-gradient(135deg,#1a237e,#0288d1); border:none; border-radius:8px; padding:12px; font-weight:700; font-size:1rem; }
-    .btn-register:hover { opacity:0.9; transform:translateY(-1px); }
-    .strength-bar { height:4px; border-radius:2px; transition:all 0.3s; margin-top:5px; background:#e0e0e0; }
-    .strength-fill { height:100%; border-radius:2px; transition:all 0.3s; width:0%; }
-    .req-item { font-size:0.75rem; display:flex; align-items:center; gap:5px; margin-bottom:3px; color:#999; }
-    .req-item.ok { color:#2e7d32; }
-    .req-item i { font-size:0.7rem; }
-    @media(max-width:768px){ .left-panel{display:none;} .right-panel{width:100%;} }
+    .left-panel::after{
+      content:'';position:absolute;bottom:-15%;left:-10%;
+      width:300px;height:300px;border-radius:50%;
+      background:rgba(6,182,212,0.08);filter:blur(50px);
+    }
+
+    .brand-logo{
+      display:flex;align-items:center;gap:12px;margin-bottom:40px;
+      position:relative;z-index:1;
+    }
+    .brand-logo-icon{
+      width:48px;height:48px;
+      background:linear-gradient(135deg,#6366f1,#06b6d4);
+      border-radius:14px;display:flex;align-items:center;justify-content:center;
+      font-size:1.4rem;box-shadow:0 4px 16px rgba(99,102,241,0.3);
+    }
+    .brand-logo h2{font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;}
+    .brand-logo span{background:linear-gradient(135deg,#a78bfa,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+    .feature-item{
+      display:flex;align-items:flex-start;gap:14px;margin-bottom:24px;
+      position:relative;z-index:1;
+      animation:slideIn 0.5s ease both;
+    }
+    .feature-item:nth-child(2){animation-delay:0.1s;}
+    .feature-item:nth-child(3){animation-delay:0.2s;}
+    .feature-item:nth-child(4){animation-delay:0.3s;}
+    @keyframes slideIn{
+      from{opacity:0;transform:translateX(-16px);}
+      to{opacity:1;transform:translateX(0);}
+    }
+    .feature-icon{
+      width:42px;height:42px;flex-shrink:0;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+    }
+    .feature-item strong{font-size:0.9rem;font-weight:600;}
+    .feature-item small{color:rgba(255,255,255,0.5);font-size:0.8rem;}
+
+    .right-panel{
+      width:45%;display:flex;align-items:center;
+      justify-content:center;padding:40px;
+      background:#f8fafc;overflow-y:auto;
+    }
+    .register-card{
+      border-radius:20px;border:none;
+      box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);
+      width:100%;max-width:420px;background:white;
+      animation:fadeInCard 0.5s ease;
+    }
+    @keyframes fadeInCard{
+      from{opacity:0;transform:translateY(12px);}
+      to{opacity:1;transform:translateY(0);}
+    }
+
+    .register-card .card-header-area{text-align:center;margin-bottom:20px;}
+    .register-card .avatar-icon{
+      width:56px;height:56px;border-radius:16px;
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      display:flex;align-items:center;justify-content:center;
+      margin:0 auto 12px;font-size:1.5rem;color:white;
+      box-shadow:0 4px 12px rgba(99,102,241,0.3);
+    }
+    .register-card h4{font-weight:800;color:#0f172a;font-size:1.3rem;letter-spacing:-0.02em;}
+    .register-card .subtitle{color:#94a3b8;font-size:0.85rem;}
+
+    .form-control{
+      border-radius:10px;padding:11px 14px;
+      border:1px solid #e2e8f0;font-size:0.9rem;transition:all 0.2s;
+    }
+    .form-control:focus{
+      border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,0.12);
+    }
+    .input-group-text{
+      background:#f8fafc;border-color:#e2e8f0;color:#94a3b8;
+      border-radius:10px 0 0 10px;
+    }
+    .btn-register{
+      background:linear-gradient(135deg,#6366f1,#8b5cf6);
+      border:none;border-radius:10px;padding:12px;
+      font-weight:700;font-size:0.95rem;
+      transition:all 0.3s;position:relative;overflow:hidden;
+    }
+    .btn-register::before{
+      content:'';position:absolute;top:0;left:-100%;
+      width:100%;height:100%;
+      background:linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent);
+      transition:left 0.5s;
+    }
+    .btn-register:hover{
+      transform:translateY(-2px);
+      box-shadow:0 4px 16px rgba(99,102,241,0.35);
+    }
+    .btn-register:hover::before{left:100%;}
+
+    .strength-bar{height:4px;border-radius:2px;transition:all 0.3s;margin-top:6px;background:#e2e8f0;}
+    .strength-fill{height:100%;border-radius:2px;transition:all 0.3s;width:0%;}
+    .req-item{font-size:0.75rem;display:flex;align-items:center;gap:5px;margin-bottom:3px;color:#94a3b8;transition:all 0.2s;}
+    .req-item.ok{color:#10b981;}
+    .req-item i{font-size:0.7rem;}
+    .alert{border-radius:10px;font-size:0.85rem;border:none;}
+
+    @media(max-width:768px){.left-panel{display:none;}.right-panel{width:100%;}}
   </style>
 </head>
 <body>
 
 <!-- Left Panel -->
 <div class="left-panel">
-  <div class="mb-4">
-    <i class="bi bi-mortarboard-fill" style="font-size:2.5rem"></i>
-    <h2 class="fw-bold mt-2">StudyAI</h2>
-    <p class="opacity-75">Your AI-powered study companion</p>
+  <div class="brand-logo">
+    <div class="brand-logo-icon"><i class="bi bi-mortarboard-fill"></i></div>
+    <h2>Study<span>AI</span></h2>
   </div>
   <div class="feature-item">
     <div class="feature-icon"><i class="bi bi-robot"></i></div>
-    <div><strong>AI Tutor</strong><br/><small class="opacity-75">Get instant answers to any topic</small></div>
+    <div><strong>AI Tutor</strong><br/><small>Get instant answers to any topic</small></div>
   </div>
   <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-lightning-charge"></i></div>
-    <div><strong>Smart Questions</strong><br/><small class="opacity-75">AI-generated practice quizzes</small></div>
+    <div class="feature-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+    <div><strong>Smart Questions</strong><br/><small>AI-generated practice quizzes</small></div>
   </div>
   <div class="feature-item">
     <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
-    <div><strong>Study Schedule</strong><br/><small class="opacity-75">Personalized day-by-day plans</small></div>
+    <div><strong>Study Schedule</strong><br/><small>Personalized day-by-day plans</small></div>
   </div>
   <div class="feature-item">
     <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-    <div><strong>Secure & Verified</strong><br/><small class="opacity-75">OTP email verification</small></div>
+    <div><strong>Secure & Verified</strong><br/><small>OTP email verification</small></div>
   </div>
 </div>
 
 <!-- Right Panel -->
 <div class="right-panel">
-  <div class="card p-4">
-    <div class="text-center mb-3">
-      <i class="bi bi-mortarboard-fill text-primary" style="font-size:2rem"></i>
-      <h4 class="fw-bold mt-1" style="color:#1a237e">Create Account</h4>
-      <p class="text-muted small mb-0">Start your AI-powered study journey</p>
+  <div class="register-card p-4">
+    <div class="card-header-area">
+      <div class="avatar-icon"><i class="bi bi-person-plus-fill"></i></div>
+      <h4>Create Account</h4>
+      <p class="subtitle mb-0">Start your AI-powered study journey</p>
     </div>
 
-    <!-- Django Messages -->
     {% if messages %}
       {% for msg in messages %}
         <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible py-2 small" role="alert">
@@ -78,26 +175,23 @@
       {% endfor %}
     {% endif %}
 
-    <!-- Form Errors -->
     {% if form.errors %}
       <div class="alert alert-danger py-2 small">
         {% for field in form %}
           {% for error in field.errors %}
-            <div><i class="bi bi-exclamation-circle"></i> <strong>{{ field.label }}:</strong> {{ error }}</div>
+            <div><i class="bi bi-exclamation-circle me-1"></i> <strong>{{ field.label }}:</strong> {{ error }}</div>
           {% endfor %}
         {% endfor %}
         {% for error in form.non_field_errors %}
-          <div><i class="bi bi-exclamation-circle"></i> {{ error }}</div>
+          <div><i class="bi bi-exclamation-circle me-1"></i> {{ error }}</div>
         {% endfor %}
       </div>
     {% endif %}
 
     <form method="post" id="registerForm">
       {% csrf_token %}
-
-      <!-- Username -->
       <div class="mb-3">
-        <label class="form-label fw-semibold small">Username</label>
+        <label class="form-label fw-semibold small" style="color:#334155">Username</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-person"></i></span>
           <input type="text" name="username" class="form-control"
@@ -106,9 +200,8 @@
         </div>
       </div>
 
-      <!-- Email -->
       <div class="mb-3">
-        <label class="form-label fw-semibold small">Email</label>
+        <label class="form-label fw-semibold small" style="color:#334155">Email</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-envelope"></i></span>
           <input type="email" name="email" class="form-control"
@@ -117,26 +210,24 @@
         </div>
       </div>
 
-      <!-- Password -->
       <div class="mb-2">
-        <label class="form-label fw-semibold small">Password</label>
+        <label class="form-label fw-semibold small" style="color:#334155">Password</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-lock"></i></span>
           <input type="password" name="password1" class="form-control"
                  placeholder="Create strong password"
                  id="password1" required/>
           <button class="btn btn-outline-secondary" type="button"
-                  onclick="togglePwd('password1', this)">
-            <i class="bi bi-eye"></i>
+                  onclick="togglePwd('password1', this)"
+                  style="border-color:#e2e8f0;border-radius:0 10px 10px 0">
+            <i class="bi bi-eye" style="color:#94a3b8"></i>
           </button>
         </div>
-        <!-- Strength bar -->
         <div class="strength-bar mt-1">
           <div class="strength-fill" id="strengthFill"></div>
         </div>
-        <small id="strengthText" class="text-muted"></small>
-        <!-- Requirements -->
-        <div class="mt-2 p-2 rounded" style="background:#f8f9fa">
+        <small id="strengthText" style="color:#94a3b8;font-size:0.75rem"></small>
+        <div class="mt-2 p-2 rounded" style="background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px">
           <div class="req-item" id="req-len"><i class="bi bi-circle"></i> At least 8 characters</div>
           <div class="req-item" id="req-upper"><i class="bi bi-circle"></i> One uppercase letter (A-Z)</div>
           <div class="req-item" id="req-lower"><i class="bi bi-circle"></i> One lowercase letter (a-z)</div>
@@ -145,20 +236,20 @@
         </div>
       </div>
 
-      <!-- Confirm Password -->
       <div class="mb-3">
-        <label class="form-label fw-semibold small">Confirm Password</label>
+        <label class="form-label fw-semibold small" style="color:#334155">Confirm Password</label>
         <div class="input-group">
           <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
           <input type="password" name="password2" class="form-control"
                  placeholder="Confirm your password"
                  id="password2" required/>
           <button class="btn btn-outline-secondary" type="button"
-                  onclick="togglePwd('password2', this)">
-            <i class="bi bi-eye"></i>
+                  onclick="togglePwd('password2', this)"
+                  style="border-color:#e2e8f0;border-radius:0 10px 10px 0">
+            <i class="bi bi-eye" style="color:#94a3b8"></i>
           </button>
         </div>
-        <small id="matchText"></small>
+        <small id="matchText" style="font-size:0.75rem"></small>
       </div>
 
       <button type="submit" class="btn btn-register w-100 text-white mt-1">
@@ -166,9 +257,9 @@
       </button>
     </form>
 
-    <p class="text-center mt-3 text-muted small">
+    <p class="text-center mt-3 small" style="color:#94a3b8">
       Already have an account?
-      <a href="{% url 'accounts:login' %}" class="fw-bold text-primary">Login</a>
+      <a href="{% url 'accounts:login' %}" style="color:#6366f1;font-weight:700;text-decoration:none">Login</a>
     </p>
   </div>
 </div>
@@ -187,7 +278,6 @@ function togglePwd(id, btn) {
   }
 }
 
-// Password strength checker
 document.getElementById('password1').addEventListener('input', function() {
   const v = this.value;
   const checks = {
@@ -199,27 +289,22 @@ document.getElementById('password1').addEventListener('input', function() {
   };
   let score = Object.values(checks).filter(Boolean).length;
 
-  // Update req items
   Object.entries(checks).forEach(([id, ok]) => {
     const el = document.getElementById(id);
     el.className = 'req-item' + (ok ? ' ok' : '');
-    el.querySelector('i').className = ok
-      ? 'bi bi-check-circle-fill'
-      : 'bi bi-circle';
+    el.querySelector('i').className = ok ? 'bi bi-check-circle-fill' : 'bi bi-circle';
   });
 
-  // Strength bar
   const fill = document.getElementById('strengthFill');
   const text = document.getElementById('strengthText');
-  const colors = ['#ef5350','#ff7043','#ffa726','#66bb6a','#43a047'];
+  const colors = ['#ef4444','#f59e0b','#f59e0b','#10b981','#10b981'];
   const labels = ['Very Weak','Weak','Fair','Strong','Very Strong'];
   fill.style.width = (score * 20) + '%';
-  fill.style.background = colors[score - 1] || '#e0e0e0';
+  fill.style.background = colors[score - 1] || '#e2e8f0';
   text.textContent = score > 0 ? labels[score - 1] : '';
-  text.style.color = colors[score - 1] || '#999';
+  text.style.color = colors[score - 1] || '#94a3b8';
 });
 
-// Password match checker
 document.getElementById('password2').addEventListener('input', function() {
   const p1 = document.getElementById('password1').value;
   const matchEl = document.getElementById('matchText');
@@ -227,10 +312,10 @@ document.getElementById('password2').addEventListener('input', function() {
     matchEl.textContent = '';
   } else if (this.value === p1) {
     matchEl.textContent = '✓ Passwords match';
-    matchEl.style.color = '#2e7d32';
+    matchEl.style.color = '#10b981';
   } else {
     matchEl.textContent = '✗ Passwords do not match';
-    matchEl.style.color = '#c62828';
+    matchEl.style.color = '#ef4444';
   }
 });
 </script>

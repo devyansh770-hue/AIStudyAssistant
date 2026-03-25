@@ -3,115 +3,99 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="StudyAI — AI-powered study assistant for students. Generate quizzes, chat with AI tutor, build study schedules."/>
   <title>{% block title %}AI Study Assistant{% endblock %}</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+
+  <!-- Bootstrap -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
-  <script src="https://cdn.tailwindcss.com"></script>
 
-  <style>
-    /* ── LIGHT (default) ── */
-    :root {
-      --bg: #f8f9fa;
-      --sidebar-bg: #1a237e;
-      --sidebar-text: #c5cae9;
-      --card-bg: #ffffff;
-      --text: #212529;
-      --text-muted: #6c757d;
-      --border: #dee2e6;
-      --input-bg: #ffffff;
-    }
-    /* ── DARK ── */
-    [data-theme="dark"] {
-      --bg: #121212;
-      --sidebar-bg: #0d0d0d;
-      --sidebar-text: #90a4ae;
-      --card-bg: #1e1e1e;
-      --text: #e0e0e0;
-      --text-muted: #9e9e9e;
-      --border: #333;
-      --input-bg: #2a2a2a;
-    }
-    /* ── WARM ── */
-    [data-theme="warm"] {
-      --bg: #fdf6ec;
-      --sidebar-bg: #5d3a1a;
-      --sidebar-text: #f5cba7;
-      --card-bg: #fffaf4;
-      --text: #3e2000;
-      --text-muted: #7d5a3c;
-      --border: #f0d9b5;
-      --input-bg: #fff8f0;
-    }
+  <!-- Design System -->
+  {% load static %}
+  <link href="{% static 'css/design-system.css' %}" rel="stylesheet"/>
 
-    body { background: var(--bg); color: var(--text); transition: all 0.3s; }
-    .sidebar { min-height: 100vh; background: var(--sidebar-bg); width: 240px; position: fixed; top: 0; left: 0; z-index: 100; display: flex; flex-direction: column; }
-    .sidebar a { color: var(--sidebar-text); text-decoration: none; padding: 10px 20px; display: flex; align-items: center; gap: 10px; border-radius: 8px; margin: 2px 8px; transition: all 0.2s; }
-    .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.15); color: white; }
-    .sidebar .brand { color: white; font-size: 1.2rem; font-weight: 700; padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; }
-    .sidebar .section-label { color: rgba(255,255,255,0.4); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding: 8px 20px; margin-top: 8px; }
-    .main-content { margin-left: 240px; padding: 20px; min-height: 100vh; }
-    .topbar { background: var(--card-bg); border-bottom: 1px solid var(--border); padding: 12px 24px; margin: -20px -20px 20px -20px; display: flex; justify-content: space-between; align-items: center; }
-    .card { border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-radius: 12px; background: var(--card-bg); color: var(--text); }
-    .btn-ai { background: linear-gradient(135deg, #1a237e, #0288d1); color: white; border: none; }
-    .btn-ai:hover { background: linear-gradient(135deg, #0288d1, #1a237e); color: white; }
-    .form-control, .form-select { background: var(--input-bg); color: var(--text); border-color: var(--border); }
-    .form-control:focus, .form-select:focus { background: var(--input-bg); color: var(--text); }
-    .table { color: var(--text); }
-    .theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; color: var(--text); cursor: pointer; font-size: 0.85rem; }
-    .theme-btn:hover { background: var(--border); }
-  </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
 
 {% if user.is_authenticated %}
-<div class="sidebar">
-  <div class="brand"><i class="bi bi-mortarboard-fill"></i> StudyAI</div>
 
+<!-- Mobile Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-icon">
+      <i class="bi bi-mortarboard-fill"></i>
+    </div>
+    <div class="brand-text">Study<span>AI</span></div>
+  </div>
+
+  <div class="nav-section">Main</div>
   <a href="{% url 'dashboard:home' %}" class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
-    <i class="bi bi-grid-1x2"></i> Dashboard
+    <i class="bi bi-grid-1x2-fill"></i> Dashboard
   </a>
   <a href="{% url 'courses:list' %}" class="{% if request.resolver_match.app_name == 'courses' %}active{% endif %}">
-    <i class="bi bi-book"></i> My Courses
+    <i class="bi bi-book-fill"></i> My Courses
   </a>
   <a href="{% url 'courses:create' %}">
     <i class="bi bi-plus-circle"></i> Add Course
   </a>
 
-  <div class="section-label">AI Tools</div>
-  <!-- AI Tools link to first course if exists, else to courses page -->
+  <div class="nav-section">AI Tools</div>
   <a href="{% if request.user.courses.exists %}{% url 'ai_engine:chat' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
     <i class="bi bi-robot"></i> AI Tutor
   </a>
   <a href="{% if request.user.courses.exists %}{% url 'quizzes:setup' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
-    <i class="bi bi-question-circle"></i> Practice Quiz
+    <i class="bi bi-lightning-charge-fill"></i> Practice Quiz
   </a>
   <a href="{% if request.user.courses.exists %}{% url 'ai_engine:schedule' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
     <i class="bi bi-calendar3"></i> Study Schedule
   </a>
 
-  <div class="mt-auto mb-3">
-    <a href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-left"></i> Logout</a>
+  <div class="sidebar-footer">
+    <a href="{% url 'accounts:logout' %}">
+      <i class="bi bi-box-arrow-left"></i> Logout
+    </a>
   </div>
 </div>
 
+<!-- ═══ MAIN ═══ -->
 <div class="main-content">
+  <!-- Topbar -->
   <div class="topbar">
-    <h6 class="mb-0 fw-bold">{% block page_title %}Dashboard{% endblock %}</h6>
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+      </button>
+      <h1 class="page-title mb-0">{% block page_title %}Dashboard{% endblock %}</h1>
+    </div>
+    <div class="topbar-actions">
       <!-- Theme Switcher -->
-      <button class="theme-btn" onclick="setTheme('light')" title="Light">☀️</button>
-      <button class="theme-btn" onclick="setTheme('dark')" title="Dark">🌙</button>
-      <button class="theme-btn" onclick="setTheme('warm')" title="Warm">🌅</button>
+      <div class="theme-switcher">
+        <button class="theme-btn" onclick="setTheme('light')" title="Light" id="theme-light">☀️</button>
+        <button class="theme-btn" onclick="setTheme('dark')" title="Dark" id="theme-dark">🌙</button>
+        <button class="theme-btn" onclick="setTheme('warm')" title="Warm" id="theme-warm">🌅</button>
+      </div>
       <!-- Profile -->
-      <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-outline-secondary ms-2">
-        <i class="bi bi-person-circle"></i> {{ user.username }}
+      <a href="{% url 'accounts:profile' %}" class="profile-btn">
+        <div class="avatar">{{ user.username|first|upper }}</div>
+        <span class="d-none d-md-inline">{{ user.username }}</span>
       </a>
     </div>
   </div>
 
-  {% include 'partials/_messages.html' %}
-  {% block content %}{% endblock %}
+  <!-- Content -->
+  <div class="content-area">
+    {% include 'partials/_messages.html' %}
+    {% block content %}{% endblock %}
+  </div>
 </div>
 
 {% else %}
@@ -120,14 +104,36 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // Theme system
+  // ── Theme System ──
   function setTheme(theme) {
     document.getElementById('htmlRoot').setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
+    updateThemeButtons(theme);
   }
+
+  function updateThemeButtons(theme) {
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active-theme'));
+    const btn = document.getElementById('theme-' + theme);
+    if (btn) btn.classList.add('active-theme');
+  }
+
   // Load saved theme
-  const saved = localStorage.getItem('theme') || 'light';
-  document.getElementById('htmlRoot').setAttribute('data-theme', saved);
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.getElementById('htmlRoot').setAttribute('data-theme', savedTheme);
+  updateThemeButtons(savedTheme);
+
+  // ── Mobile Sidebar ──
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+    document.body.style.overflow = document.getElementById('sidebar').classList.contains('open') ? 'hidden' : '';
+  }
+
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+  }
 </script>
 {% block extra_js %}{% endblock %}
 </body>
