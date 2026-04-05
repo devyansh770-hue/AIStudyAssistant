@@ -146,12 +146,15 @@ class PasswordResetConfirmForm(forms.Form):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['bio', 'study_goal_hours']
+        fields = ['bio', 'study_goal_hours', 'avatar']
         widgets = {
             'bio': forms.Textarea(attrs={
                 'class': 'form-control', 'rows': 3
             }),
             'study_goal_hours': forms.NumberInput(attrs={
                 'class': 'form-control', 'min': 1, 'max': 16
+            }),
+            'avatar': forms.FileInput(attrs={
+                'class': 'form-control', 'accept': 'image/*', 'id': 'avatarInput'
             }),
         }

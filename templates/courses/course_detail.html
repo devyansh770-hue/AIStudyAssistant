@@ -135,8 +135,14 @@
         <a href="{% url 'ai_engine:chat' course.pk %}" class="ai-tool-btn">
           <i class="bi bi-robot" style="color:#8b5cf6"></i> AI Tutor
         </a>
-        <a href="{% url 'ai_engine:generate_questions' course.pk %}" class="ai-tool-btn">
-          <i class="bi bi-lightning" style="color:var(--warning)"></i> Generate Questions
+        <a href="{% url 'ai_engine:predict_score' course.pk %}" class="ai-tool-btn">
+          <i class="bi bi-graph-up-arrow" style="color:var(--info)"></i> Predict Exam Score
+        </a>
+        <a href="{% url 'ai_engine:mistake_analysis' course.pk %}" class="ai-tool-btn">
+          <i class="bi bi-bug" style="color:var(--danger)"></i> Mistake Analyzer
+        </a>
+        <a href="{% url 'ai_engine:knowledge_graph' course.pk %}" class="ai-tool-btn">
+          <i class="bi bi-share-fill" style="color:var(--warning)"></i> Knowledge Graph
         </a>
       </div>
     </div>

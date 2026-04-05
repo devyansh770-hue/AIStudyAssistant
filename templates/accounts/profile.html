@@ -2,43 +2,135 @@
 {% block title %}My Profile{% endblock %}
 {% block page_title %}My Profile{% endblock %}
 
+{% block extra_css %}
+<style>
+  .profile-header-card {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b, #0c4a6e);
+    border: none; overflow: hidden; position: relative;
+  }
+  .profile-header-card .bg-blob {
+    position: absolute; top: -30%; right: -10%;
+    width: 200px; height: 200px; border-radius: 50%;
+    background: rgba(99,102,241,0.12); pointer-events: none;
+  }
+  .profile-email-text { color: rgba(255,255,255,0.6) !important; }
+  .profile-joined-text { color: rgba(255,255,255,0.38) !important; font-size: 0.82rem; }
+
+  .avatar-upload-wrap { cursor: pointer; }
+  .avatar-upload-wrap:hover .avatar-edit-icon { opacity: 1 !important; }
+  .avatar-circle {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: linear-gradient(135deg,#6366f1,#06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 800; color: white;
+    border: 3px solid rgba(255,255,255,0.25);
+    overflow: hidden; position: relative;
+    transition: opacity 0.2s;
+  }
+  .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-edit-icon {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.3rem;
+    opacity: 0; transition: opacity 0.2s;
+    border-radius: 50%;
+  }
+
+  .streak-stat {
+    background: linear-gradient(135deg, rgba(251,146,60,0.15), rgba(239,68,68,0.1));
+    border: 1px solid rgba(251,146,60,0.25);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+  }
+  .streak-stat .value { font-size: 1.8rem; font-weight: 800; color: #f97316; }
+  .streak-stat .label { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+  /* Cropper styling */
+  .crop-modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
+  .crop-modal-content { background-color: var(--bg-secondary); margin: 5% auto; padding: 20px; width: 90%; max-width: 600px; border-radius: var(--radius-lg); }
+  .img-container { max-height: 400px; width: 100%; }
+  .img-container img { max-width: 100%; display: block; }
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet"/>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-7">
 
-    <!-- Profile Header Card -->
-    <div class="card p-4 mb-4 text-center animate-fade-in-up" style="background:linear-gradient(135deg,#0f172a,#1e1b4b,#0c4a6e);border:none;overflow:hidden;position:relative">
-      <div style="position:absolute;top:-30%;right:-10%;width:200px;height:200px;border-radius:50%;background:rgba(99,102,241,0.1)"></div>
-      <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3"
-           style="width:80px;height:80px;background:linear-gradient(135deg,#6366f1,#06b6d4);position:relative;z-index:1">
-        <span style="font-size:2rem;font-weight:800;color:white">{{ request.user.username|first|upper }}</span>
-      </div>
+    <!-- Profile Header -->
+    <div class="card p-4 mb-4 text-center animate-fade-in-up profile-header-card">
+      <div class="bg-blob"></div>
+
+      <!-- Clickable Avatar Upload -->
+      <form method="post" enctype="multipart/form-data" id="avatarForm" style="position:relative;z-index:1">
+        {% csrf_token %}
+        <label class="avatar-upload-wrap d-inline-block mb-3" for="avatarInput" title="Click to change photo">
+          <div class="avatar-circle mx-auto">
+            {% if profile.avatar %}
+              <img src="{{ profile.avatar.url }}" alt="avatar" id="avatarPreview"/>
+            {% else %}
+              <span id="avatarInitial">{{ request.user.username|first|upper }}</span>
+            {% endif %}
+            <div class="avatar-edit-icon"><i class="bi bi-camera-fill"></i></div>
+          </div>
+        </label>
+        <input type="file" name="avatar" id="avatarInput" accept="image/*" class="d-none" onchange="previewAndSubmit(this)"/>
+        <!-- Hidden fields so partial form submit works -->
+        <input type="hidden" name="bio" value="{{ profile.bio }}"/>
+        <input type="hidden" name="study_goal_hours" value="{{ profile.study_goal_hours }}"/>
+      </form>
+
       <h4 class="fw-bold mb-0" style="color:white;position:relative;z-index:1">{{ request.user.username }}</h4>
-      <p style="color:rgba(255,255,255,0.5);position:relative;z-index:1">{{ request.user.email }}</p>
-      <p style="color:rgba(255,255,255,0.35);font-size:0.82rem;position:relative;z-index:1">Member since {{ request.user.date_joined|date:"F Y" }}</p>
+      <p class="profile-email-text mb-0" style="position:relative;z-index:1">{{ request.user.email }}</p>
+      <p class="profile-joined-text mt-1" style="position:relative;z-index:1">Member since {{ request.user.date_joined|date:"F Y" }}</p>
     </div>
 
     <!-- Stats Row -->
     <div class="row g-3 mb-4 stagger-children">
-      <div class="col-4">
+      <div class="col-3">
         <div class="card p-3 text-center">
           <div class="fw-bold fs-4" style="color:var(--primary)">{{ request.user.courses.count }}</div>
           <div style="color:var(--text-muted);font-size:0.82rem;font-weight:500">Courses</div>
         </div>
       </div>
-      <div class="col-4">
+      <div class="col-3">
         <div class="card p-3 text-center">
           <div class="fw-bold fs-4" style="color:var(--success)">{{ request.user.attempts.count }}</div>
           <div style="color:var(--text-muted);font-size:0.82rem;font-weight:500">Quizzes</div>
         </div>
       </div>
-      <div class="col-4">
+      <div class="col-3">
         <div class="card p-3 text-center">
           <div class="fw-bold fs-4" style="color:var(--warning)">{{ profile.study_goal_hours }}h</div>
           <div style="color:var(--text-muted);font-size:0.82rem;font-weight:500">Daily Goal</div>
         </div>
       </div>
+      <div class="col-3">
+        <div class="streak-stat">
+          <div class="value">🔥 {{ streak.current_streak }}</div>
+          <div class="label">Day Streak</div>
+        </div>
+      </div>
     </div>
+
+    <!-- Streak Details -->
+    {% if streak.current_streak > 0 %}
+    <div class="card p-3 mb-4 d-flex flex-row align-items-center gap-3 animate-fade-in-up">
+      <div style="font-size:2.5rem">🔥</div>
+      <div>
+        <div class="fw-bold" style="color:var(--text-primary)">
+          {{ streak.current_streak }} day streak — Keep it going!
+        </div>
+        <div style="color:var(--text-muted);font-size:0.82rem">
+          Longest streak: {{ streak.longest_streak }} days &nbsp;·&nbsp;
+          Total active days: {{ streak.total_active_days }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
     <!-- Edit Form -->
     <div class="card p-4 animate-fade-in-up" style="animation-delay:0.1s">
@@ -48,7 +140,7 @@
         </div>
         <h6>Edit Profile</h6>
       </div>
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="mb-3">
           <label class="form-label fw-semibold" style="font-size:0.88rem">Username</label>
@@ -63,9 +155,14 @@
           <label class="form-label fw-semibold" style="font-size:0.88rem">Bio</label>
           {{ form.bio }}
         </div>
-        <div class="mb-4">
+        <div class="mb-3">
           <label class="form-label fw-semibold" style="font-size:0.88rem">Daily Study Goal (hours)</label>
           {{ form.study_goal_hours }}
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-semibold" style="font-size:0.88rem">Profile Picture</label>
+          {{ form.avatar }}
+          <div class="form-text" style="color:var(--text-muted);font-size:0.78rem">JPG, PNG or GIF. Max 5MB.</div>
         </div>
         <button type="submit" class="btn btn-ai px-4">
           <i class="bi bi-check-lg"></i> Save Changes
@@ -73,6 +170,85 @@
       </form>
     </div>
 
+    </div>
+
   </div>
 </div>
+
+<!-- Modal for cropping -->
+<div id="cropModal" class="crop-modal">
+  <div class="crop-modal-content animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0 fw-bold" style="color:var(--text-primary)">Crop Profile Picture</h5>
+      <button type="button" class="btn-close" onclick="closeCropModal()"></button>
+    </div>
+    <div class="img-container">
+      <img id="cropImage" src="" alt="Picture to crop">
+    </div>
+    <div class="d-flex justify-content-end gap-2 mt-4">
+      <button type="button" class="btn btn-outline-secondary" onclick="closeCropModal()">Cancel</button>
+      <button type="button" class="btn btn-ai" id="cropBtn">Crop & Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+let cropper;
+const modal = document.getElementById('cropModal');
+const image = document.getElementById('cropImage');
+const input = document.getElementById('avatarInput');
+
+function previewAndSubmit(inputElem) {
+  if (!inputElem.files || !inputElem.files[0]) return;
+  const file = inputElem.files[0];
+  const url = URL.createObjectURL(file);
+  image.src = url;
+  modal.style.display = 'block';
+
+  if (cropper) { cropper.destroy(); }
+  cropper = new Cropper(image, {
+    aspectRatio: 1,
+    viewMode: 1,
+    autoCropArea: 1,
+  });
+}
+
+function closeCropModal() {
+  modal.style.display = 'none';
+  if (cropper) { cropper.destroy(); cropper = null; }
+  input.value = ''; // clear input
+}
+
+document.getElementById('cropBtn').addEventListener('click', function() {
+  if (!cropper) return;
+  
+  // Disable button to prevent double-click
+  this.innerText = "Saving...";
+  this.disabled = true;
+
+  cropper.getCroppedCanvas({ width: 400, height: 400 }).toBlob((blob) => {
+    // Create a new File object from the blob
+    let file = new File([blob], "avatar_cropped.jpg", { type: "image/jpeg", lastModified: new Date().getTime() });
+    let container = new DataTransfer();
+    container.items.add(file);
+    
+    // Replace input file with the cropped one
+    input.files = container.files;
+    
+    // Update preview temporarily
+    const url = URL.createObjectURL(blob);
+    const wrap = document.querySelector('.avatar-circle');
+    wrap.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>
+                      <div class="avatar-edit-icon"><i class="bi bi-camera-fill"></i></div>`;
+    
+    modal.style.display = 'none';
+    
+    // Submit form containing avatar + hidden fields
+    document.getElementById('avatarForm').submit();
+  }, 'image/jpeg', 0.9);
+});
+</script>
 {% endblock %}

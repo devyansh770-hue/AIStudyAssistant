@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 class Course(models.Model):
     COMPLEXITY_CHOICES = [
         (1, 'Easy'),
@@ -17,7 +18,7 @@ class Course(models.Model):
     complexity = models.IntegerField(choices=COMPLEXITY_CHOICES, default=2)
     topics = models.TextField(help_text='Comma separated topics')
     daily_study_hours = models.PositiveIntegerField(default=2)
-    hours_spent = models.FloatField(default=0.0)  # NEW
+    hours_spent = models.FloatField(default=0.0)
     ai_schedule = models.JSONField(blank=True, null=True, help_text='Stored AI generated schedule')
     exam_feedback = models.TextField(blank=True, help_text='User experience/feedback after exam')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -55,6 +56,13 @@ class Course(models.Model):
         days = self.days_until_exam()
         return max(days, 0) * self.daily_study_hours
 
+    def avg_quiz_score(self):
+        from quizzes.models import QuizAttempt
+        attempts = QuizAttempt.objects.filter(course=self)
+        if not attempts.exists():
+            return 0
+        return round(sum(a.score_percent for a in attempts) / attempts.count(), 1)
+
 
 class Topic(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='topic_set')
@@ -65,3 +73,17 @@ class Topic(models.Model):
 
     def __str__(self):
         return f"{self.name} — {self.course.name}"
+
+
+class ScheduleHistory(models.Model):
+    """Tracks every AI schedule generated for a course."""
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='schedule_history')
+    schedule_data = models.JSONField(help_text='The full schedule JSON')
+    generated_at = models.DateTimeField(auto_now_add=True)
+    label = models.CharField(max_length=100, blank=True, help_text='Optional label e.g. Week 1 Plan')
+
+    class Meta:
+        ordering = ['-generated_at']
+
+    def __str__(self):
+        return f"{self.course.name} — Schedule @ {self.generated_at:%Y-%m-%d %H:%M}"

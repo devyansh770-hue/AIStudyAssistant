@@ -6,71 +6,68 @@
 <style>
   .welcome-banner {
     background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
-    border-radius: var(--radius-xl);
-    padding: 32px 36px;
-    color: white;
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 28px;
+    border-radius: var(--radius-xl); padding: 32px 36px;
+    color: white; position: relative; overflow: hidden; margin-bottom: 28px;
   }
-  .welcome-banner::before {
-    content: '';
-    position: absolute;
-    top: -60%; right: -10%;
-    width: 300px; height: 300px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.08);
-  }
-  .welcome-banner::after {
-    content: '';
-    position: absolute;
-    bottom: -40%; left: 20%;
-    width: 200px; height: 200px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-  }
-  .welcome-banner h2 { position: relative; z-index: 1; }
-  .welcome-banner p { position: relative; z-index: 1; }
+  .welcome-banner::before { content:''; position:absolute; top:-60%; right:-10%; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,0.08); }
+  .welcome-banner::after  { content:''; position:absolute; bottom:-40%; left:20%; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .welcome-banner h2, .welcome-banner p { position:relative; z-index:1; }
+  .quiz-row { padding:12px 16px; border-radius:var(--radius-md); transition:all var(--transition-fast); border:1px solid transparent; }
+  .quiz-row:hover { background:var(--bg-tertiary); border-color:var(--border-color); transform:translateX(4px); }
 
-  .grade-ring {
-    width: 60px; height: 60px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1.1rem;
-    position: relative;
-  }
-
-  .quiz-row {
-    padding: 12px 16px;
-    border-radius: var(--radius-md);
-    transition: all var(--transition-fast);
-    border: 1px solid transparent;
-  }
-  .quiz-row:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--border-color);
-    transform: translateX(4px);
-  }
+  /* Performance chart bar */
+  .perf-bar-wrap { display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:0.83rem; }
+  .perf-bar-bg { flex:1; height:8px; background:var(--bg-tertiary); border-radius:99px; overflow:hidden; }
+  .perf-bar-fill { height:100%; border-radius:99px; transition:width 0.8s cubic-bezier(0.22,1,0.36,1); }
 </style>
 {% endblock %}
 
 {% block content %}
 
+<!-- ── Surprise Test Modal ── -->
+{% if surprise_notification %}
+<div class="surprise-modal-overlay" id="surpriseOverlay">
+  <div class="surprise-modal">
+    <span class="surprise-icon">⚡</span>
+    <h3>Surprise Test Time!</h3>
+    <p>
+      Your exam for <strong>{{ surprise_notification.course.name }}</strong> is in
+      <strong>{{ surprise_notification.course.days_until_exam }} days</strong>.<br/>
+      Let's see how prepared you really are!
+    </p>
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
+      <a href="{% url 'quizzes:attempt' surprise_notification.course.pk %}?topic={{ surprise_notification.course.get_topics_list.0 }}&difficulty=medium&count=5&surprise=1"
+         class="btn btn-ai px-4">
+        <i class="bi bi-lightning-charge-fill me-1"></i> Take Surprise Test
+      </a>
+      <form method="post" action="{% url 'quizzes:dismiss_surprise' %}">
+        {% csrf_token %}
+        <input type="hidden" name="st_id" value="{{ surprise_notification.pk }}"/>
+        <button type="submit" class="btn btn-outline-secondary px-4">Maybe Later</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- ── Welcome Banner ── -->
 <div class="welcome-banner animate-fade-in-up">
-  <h2 class="fw-bold mb-1" style="font-size:1.6rem">
-    Welcome back, {{ user.username }}! 👋
-  </h2>
-  <p class="mb-0 opacity-75" style="font-size:0.95rem">
-    {% if upcoming_exams %}
-      You have {{ upcoming_exams|length }} upcoming exam{{ upcoming_exams|length|pluralize }}. Let's keep studying!
-    {% else %}
-      Ready to start studying? Add a course to get started.
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h2 class="fw-bold mb-1" style="font-size:1.6rem">Welcome back, {{ user.username }}! 👋</h2>
+      <p class="mb-0 opacity-75" style="font-size:0.95rem">
+        {% if upcoming_exams %}You have {{ upcoming_exams|length }} upcoming exam{{ upcoming_exams|length|pluralize }}. Let's keep studying!
+        {% else %}Ready to start studying? Add a course to get started.{% endif %}
+      </p>
+    </div>
+    {% if streak.current_streak > 0 %}
+    <div style="background:rgba(255,255,255,0.12);border-radius:var(--radius-lg);padding:12px 20px;text-align:center;backdrop-filter:blur(8px)">
+      <div style="font-size:2rem">🔥</div>
+      <div style="font-weight:800;font-size:1.1rem">{{ streak.current_streak }}</div>
+      <div style="font-size:0.75rem;opacity:0.8">Day Streak</div>
+    </div>
     {% endif %}
-  </p>
+  </div>
 </div>
 
 <!-- ── STAT CARDS ── -->
@@ -105,245 +102,288 @@
   </div>
 </div>
 
-<!-- ── ROW 2: Exams + Insights ── -->
-<div class="row g-3 mb-4">
-
-  <!-- Upcoming Exams -->
-  <div class="col-md-5">
-    <div class="card p-4 h-100">
-      <div class="section-header">
-        <div class="section-icon" style="background:var(--danger-light);color:var(--danger)">
-          <i class="bi bi-calendar-event-fill"></i>
-        </div>
-        <h6>Upcoming Exams</h6>
-      </div>
-      {% if upcoming_exams %}
-        {% for course in upcoming_exams %}
-        <div class="exam-countdown mb-2 {% if course.days_until_exam <= 3 %}exam-urgent{% elif course.days_until_exam <= 7 %}exam-soon{% else %}exam-normal{% endif %}">
-          <div>
-            <div class="fw-semibold" style="font-size:0.9rem">{{ course.name }}</div>
-            <div style="font-size:0.75rem;opacity:0.7">{{ course.exam_date }}</div>
-          </div>
-          <span class="badge {% if course.days_until_exam <= 3 %}bg-danger{% elif course.days_until_exam <= 7 %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size:0.8rem">
-            {{ course.days_until_exam }}d left
-          </span>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty-state" style="padding:24px 0">
-          <div class="empty-icon" style="width:56px;height:56px;font-size:1.4rem">
-            <i class="bi bi-calendar-plus"></i>
-          </div>
-          <p style="font-size:0.85rem">No upcoming exams</p>
-          <a href="{% url 'courses:create' %}" class="btn btn-sm btn-ai">
-            <i class="bi bi-plus"></i> Add Course
-          </a>
-        </div>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- AI Insights -->
-  <div class="col-md-7">
-    <div class="card p-4 h-100">
-      <div class="section-header">
-        <div class="section-icon" style="background:var(--warning-light);color:var(--warning)">
-          <i class="bi bi-lightbulb-fill"></i>
-        </div>
-        <h6>AI Insights</h6>
-      </div>
-      {% if best_topic %}
-      <div class="insight-card" style="background:var(--success-light)">
-        <span class="insight-emoji">💪</span>
-        <div>
-          <div class="fw-semibold" style="font-size:0.85rem;color:var(--success)">Strongest Topic</div>
-          <div class="fw-bold" style="font-size:1rem">{{ best_topic }}</div>
-          <div style="font-size:0.75rem;color:var(--text-muted)">{{ topic_avg|default:"" }} avg score</div>
-        </div>
-      </div>
-      <div class="insight-card" style="background:var(--warning-light)">
-        <span class="insight-emoji">📖</span>
-        <div>
-          <div class="fw-semibold" style="font-size:0.85rem;color:var(--warning)">Needs More Practice</div>
-          <div class="fw-bold" style="font-size:1rem">{{ worst_topic }}</div>
-          <div style="font-size:0.75rem;color:var(--text-muted)">Focus here next!</div>
-        </div>
-      </div>
-      {% else %}
-      <div class="empty-state" style="padding:16px 0">
-        <div class="empty-icon" style="width:56px;height:56px;font-size:1.4rem">
-          <i class="bi bi-graph-up-arrow"></i>
-        </div>
-        <p style="font-size:0.85rem">Take some quizzes to see your insights!</p>
-      </div>
-      {% endif %}
-
-      <!-- Quick Actions -->
-      <div class="mt-3 pt-3" style="border-top:1px solid var(--border-light)">
-        <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">
-          Quick Actions
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-          <a href="{% url 'courses:create' %}" class="quick-action-btn">
-            <i class="bi bi-plus-circle"></i> New Course
-          </a>
-          {% if courses %}
-          <a href="{% url 'quizzes:setup' courses.first.pk %}" class="quick-action-btn">
-            <i class="bi bi-lightning-charge"></i> Quick Quiz
-          </a>
-          <a href="{% url 'ai_engine:chat' courses.first.pk %}" class="quick-action-btn">
-            <i class="bi bi-robot"></i> Ask AI
-          </a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── ROW 3: My Courses ── -->
+<!-- ── TABBED SECTION ── -->
 <div class="card p-4 mb-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <div class="section-header mb-0">
-      <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
-        <i class="bi bi-book-fill"></i>
-      </div>
-      <h6>My Courses</h6>
-    </div>
-    <a href="{% url 'courses:create' %}" class="btn btn-sm btn-ai">
-      <i class="bi bi-plus"></i> Add
-    </a>
-  </div>
+  <ul class="nav nav-tabs mb-0" id="dashTabs" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-overview" type="button"><i class="bi bi-grid me-1"></i>Overview</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-courses" type="button"><i class="bi bi-book me-1"></i>My Courses</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-history" type="button"><i class="bi bi-archive me-1"></i>Exam History {% if past_exams %}<span class="badge bg-secondary ms-1" style="font-size:0.7rem">{{ past_exams|length }}</span>{% endif %}</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-quiz" type="button"><i class="bi bi-clipboard-check me-1"></i>Recent Quizzes</button></li>
+  </ul>
 
-  {% if courses %}
-  <div class="row g-3 stagger-children">
-    {% for course in courses %}
-    <div class="col-md-4">
-      <div class="card p-3 h-100 course-card">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <h6 class="fw-bold mb-0" style="font-size:0.95rem">{{ course.name }}</h6>
-          <span class="badge {% if course.complexity == 1 %}bg-success{% elif course.complexity == 2 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
-            {{ course.complexity_label }}
-          </span>
-        </div>
+  <div class="tab-content" id="dashTabsContent">
 
-        <!-- Topics -->
-        <div class="mb-2">
-          {% for t in course.get_topics_list|slice:":3" %}
-            <span class="topic-pill">{{ t }}</span>
-          {% endfor %}
-          {% if course.get_topics_list|length > 3 %}
-            <span class="topic-pill" style="background:var(--bg-tertiary);color:var(--text-muted);border-color:var(--border-color)">
-              +{{ course.get_topics_list|length|add:"-3" }} more
-            </span>
+    <!-- ── Tab 1: Overview ── -->
+    <div class="tab-pane fade show active" id="tab-overview">
+      <div class="row g-3">
+        <!-- Upcoming Exams -->
+        <div class="col-md-5">
+          <div class="section-header">
+            <div class="section-icon" style="background:var(--danger-light);color:var(--danger)"><i class="bi bi-calendar-event-fill"></i></div>
+            <h6>Upcoming Exams</h6>
+          </div>
+          {% if upcoming_exams %}
+            {% for course in upcoming_exams %}
+            <div class="exam-countdown mb-2 {% if course.days_until_exam <= 3 %}exam-urgent{% elif course.days_until_exam <= 7 %}exam-soon{% else %}exam-normal{% endif %}">
+              <div>
+                <div class="fw-semibold" style="font-size:0.9rem">{{ course.name }}</div>
+                <div style="font-size:0.75rem;opacity:0.7">{{ course.exam_date }}</div>
+              </div>
+              <span class="badge {% if course.days_until_exam <= 3 %}bg-danger{% elif course.days_until_exam <= 7 %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size:0.8rem">
+                {{ course.days_until_exam }}d left
+              </span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state" style="padding:24px 0">
+              <div class="empty-icon" style="width:56px;height:56px;font-size:1.4rem"><i class="bi bi-calendar-plus"></i></div>
+              <p style="font-size:0.85rem">No upcoming exams</p>
+              <a href="{% url 'courses:create' %}" class="btn btn-sm btn-ai"><i class="bi bi-plus"></i> Add Course</a>
+            </div>
           {% endif %}
         </div>
 
-        <!-- Completion -->
-        {% with pct=course.completion_percentage %}
-        <div class="d-flex justify-content-between mb-1">
-          <small style="color:var(--text-muted);font-size:0.75rem">Completion</small>
-          <small class="fw-bold" style="color:var(--primary);font-size:0.75rem">{{ pct }}%</small>
-        </div>
-        <div class="progress mb-2" style="height:5px">
-          <div class="progress-bar" style="width:{{ pct }}%;background:linear-gradient(90deg,var(--primary),#8b5cf6)"></div>
-        </div>
-        {% endwith %}
+        <!-- AI Insights -->
+        <div class="col-md-7">
+          <div class="section-header">
+            <div class="section-icon" style="background:var(--warning-light);color:var(--warning)"><i class="bi bi-lightbulb-fill"></i></div>
+            <h6>AI Insights</h6>
+          </div>
+          {% if best_topic %}
+          <div class="insight-card" style="background:var(--success-light)">
+            <span class="insight-emoji">💪</span>
+            <div>
+              <div class="fw-semibold" style="font-size:0.85rem;color:var(--success)">Strongest Topic</div>
+              <div class="fw-bold" style="font-size:1rem">{{ best_topic }}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">{{ best_topic_score }}% avg score</div>
+            </div>
+          </div>
+          <div class="insight-card" style="background:var(--warning-light)">
+            <span class="insight-emoji">📖</span>
+            <div>
+              <div class="fw-semibold" style="font-size:0.85rem;color:var(--warning)">Needs More Practice</div>
+              <div class="fw-bold" style="font-size:1rem">{{ worst_topic }}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">{{ worst_topic_score }}% — Focus here next!</div>
+            </div>
+          </div>
+          {% else %}
+          <div class="empty-state" style="padding:16px 0">
+            <div class="empty-icon" style="width:56px;height:56px;font-size:1.4rem"><i class="bi bi-graph-up-arrow"></i></div>
+            <p style="font-size:0.85rem">Take some quizzes to see your insights!</p>
+          </div>
+          {% endif %}
 
-        <div class="d-flex justify-content-between align-items-center mb-3" style="font-size:0.78rem;color:var(--text-muted)">
-          <span>
-            <i class="bi bi-clock text-danger"></i>
-            {% if course.days_until_exam < 0 %}
-              <span class="text-warning fw-bold">Exam Over</span>
-            {% else %}
-              {{ course.days_until_exam }}d to exam
-            {% endif %}
-          </span>
-          <span>
-            <i class="bi bi-hourglass-split"></i>
-            {{ course.hours_spent }}h studied
-          </span>
-        </div>
+          <!-- Spaced Repetition Alert -->
+          {% if sr_due_count and sr_due_count > 0 %}
+          <div class="insight-card mt-3" style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2);">
+            <span class="insight-emoji" style="font-size:1.8rem">🧠</span>
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="fw-bold" style="color:var(--primary); font-size:1rem">Reviews Due Today</div>
+                <a href="{% url 'ai_engine:review_queue' %}" class="btn btn-sm btn-primary py-1 px-3" style="font-size:0.75rem; border-radius:20px;">Review Now</a>
+              </div>
+              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:2px;">
+                You have <strong>{{ sr_due_count }}</strong> flashcards ready for optimal spaced repetition review.
+              </div>
+            </div>
+          </div>
+          {% endif %}
 
-        <div class="d-flex gap-1 flex-wrap mt-auto">
-          <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-outline-primary" title="View">
-            <i class="bi bi-eye"></i>
-          </a>
-          <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-sm btn-ai" title="Quiz">
-            <i class="bi bi-lightning-charge"></i> Quiz
-          </a>
-          <a href="{% url 'ai_engine:schedule' course.pk %}" class="btn btn-sm btn-outline-success" title="Schedule">
-            <i class="bi bi-calendar3"></i>
-          </a>
-          <a href="{% url 'ai_engine:chat' course.pk %}" class="btn btn-sm btn-outline-secondary" title="AI Tutor">
-            <i class="bi bi-robot"></i>
-          </a>
+          <!-- Quick Actions -->
+          <div class="mt-3 pt-3" style="border-top:1px solid var(--border-light)">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:10px">Quick Actions</div>
+            <div class="d-flex gap-2 flex-wrap">
+              <a href="{% url 'courses:create' %}" class="quick-action-btn"><i class="bi bi-plus-circle"></i> New Course</a>
+              {% if courses %}
+              <a href="{% url 'quizzes:setup' courses.first.pk %}" class="quick-action-btn"><i class="bi bi-lightning-charge"></i> Quick Quiz</a>
+              <a href="{% url 'ai_engine:chat' courses.first.pk %}" class="quick-action-btn"><i class="bi bi-robot"></i> Ask AI</a>
+              {% endif %}
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    {% endfor %}
-  </div>
 
-  {% else %}
-  <div class="empty-state">
-    <div class="empty-icon">
-      <i class="bi bi-book"></i>
+    <!-- Global Master Planner Action -->
+    <div class="card p-3 mb-4 text-center animate-fade-in-up" style="background:var(--bg-secondary); border: 1px dashed var(--primary); animation-delay: 0.1s;">
+      <h6 class="fw-bold mb-2" style="color:var(--text-primary)">Multi-Subject Study Planner</h6>
+      <p style="color:var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">Generate an interconnected schedule balancing all your upcoming exams.</p>
+      <a href="{% url 'ai_engine:global_schedule' %}" class="btn btn-sm btn-ai mx-auto px-4" style="width:fit-content">
+        <i class="bi bi-diagram-3-fill"></i> View Master Plan
+      </a>
     </div>
-    <p>No courses yet. Add your first course to get started.</p>
-    <a href="{% url 'courses:create' %}" class="btn btn-ai">
-      <i class="bi bi-plus-circle"></i> Add Your First Course
-    </a>
-  </div>
-  {% endif %}
-</div>
 
-<!-- ── ROW 4: Recent Quiz Results ── -->
-{% if recent_attempts %}
-<div class="card p-4 animate-fade-in-up">
-  <div class="section-header">
-    <div class="section-icon" style="background:var(--success-light);color:var(--success)">
-      <i class="bi bi-clipboard-check-fill"></i>
-    </div>
-    <h6>Recent Quiz Results</h6>
-  </div>
-  <div class="table-responsive">
-    <table class="table align-middle mb-0">
-      <thead>
-        <tr>
-          <th>Course</th>
-          <th>Topic</th>
-          <th>Score</th>
-          <th>Questions</th>
-          <th>Time</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in recent_attempts %}
-        <tr>
-          <td class="fw-semibold" style="font-size:0.9rem">{{ a.course.name|truncatechars:22 }}</td>
-          <td>
-            <span class="topic-pill">{{ a.topic }}</span>
-          </td>
-          <td>
-            <span class="badge
-              {% if a.score_percent >= 70 %}bg-success
-              {% elif a.score_percent >= 40 %}bg-warning text-dark
-              {% else %}bg-danger{% endif %}" style="font-size:0.8rem">
-              {{ a.score_percent }}%
-            </span>
-          </td>
-          <td style="color:var(--text-muted);font-size:0.85rem">
-            {{ a.correct_answers }}/{{ a.total_questions }}
-          </td>
-          <td style="color:var(--text-muted);font-size:0.85rem">{{ a.time_taken_seconds }}s</td>
-          <td style="color:var(--text-muted);font-size:0.85rem">{{ a.created_at|date:"M d, H:i" }}</td>
-        </tr>
+    <!-- ── Tab 2: My Courses ── -->
+    <div class="tab-pane fade" id="tab-courses">
+      {% if courses %}
+      <div class="row g-3 stagger-children">
+        {% for course in courses %}
+        <div class="col-md-4">
+          <div class="card p-3 h-100 course-card">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="fw-bold mb-0" style="font-size:0.95rem">{{ course.name }}</h6>
+              <span class="badge {% if course.complexity == 1 %}bg-success{% elif course.complexity == 2 %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ course.complexity_label }}</span>
+            </div>
+            <div class="mb-2">
+              {% for t in course.get_topics_list|slice:":3" %}<span class="topic-pill">{{ t }}</span>{% endfor %}
+              {% if course.get_topics_list|length > 3 %}
+                <span class="topic-pill" style="background:var(--bg-tertiary);color:var(--text-muted);border-color:var(--border-color)">+{{ course.get_topics_list|length|add:"-3" }} more</span>
+              {% endif %}
+            </div>
+            {% with pct=course.completion_percentage %}
+            <div class="d-flex justify-content-between mb-1">
+              <small style="color:var(--text-muted);font-size:0.75rem">Completion</small>
+              <small class="fw-bold" style="color:var(--primary);font-size:0.75rem">{{ pct }}%</small>
+            </div>
+            <div class="progress mb-2" style="height:5px">
+              <div class="progress-bar" style="width:{{ pct }}%;background:linear-gradient(90deg,var(--primary),#8b5cf6)"></div>
+            </div>
+            {% endwith %}
+            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size:0.78rem;color:var(--text-muted)">
+              <span><i class="bi bi-clock text-danger"></i>
+                {% if course.days_until_exam < 0 %}<span class="text-warning fw-bold">Exam Over</span>
+                {% else %}{{ course.days_until_exam }}d to exam{% endif %}
+              </span>
+              <span><i class="bi bi-hourglass-split"></i> {{ course.hours_spent }}h studied</span>
+            </div>
+            <div class="d-flex gap-1 flex-wrap mt-auto">
+              <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-outline-primary" title="View"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-sm btn-ai" title="Quiz"><i class="bi bi-lightning-charge"></i> Quiz</a>
+              <a href="{% url 'ai_engine:schedule' course.pk %}" class="btn btn-sm btn-outline-success" title="Schedule"><i class="bi bi-calendar3"></i></a>
+              <a href="{% url 'ai_engine:chat' course.pk %}" class="btn btn-sm btn-outline-secondary" title="AI Tutor"><i class="bi bi-robot"></i></a>
+            </div>
+          </div>
+        </div>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-{% endif %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-book"></i></div>
+        <p>No courses yet. Add your first course to get started.</p>
+        <a href="{% url 'courses:create' %}" class="btn btn-ai"><i class="bi bi-plus-circle"></i> Add Your First Course</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Tab 3: Exam History ── -->
+    <div class="tab-pane fade" id="tab-history">
+      {% if past_exams %}
+        {% for course in past_exams %}
+        <div class="exam-history-card {% if course.exam_feedback %}has-feedback{% endif %}">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <h6 class="fw-bold mb-1" style="font-size:0.95rem">
+                {{ course.name }}
+                <span class="badge bg-secondary ms-2" style="font-size:0.7rem">Completed</span>
+              </h6>
+              <div style="font-size:0.8rem;color:var(--text-muted)">
+                <i class="bi bi-calendar3 me-1"></i>{{ course.exam_date }}
+                &nbsp;·&nbsp;<i class="bi bi-hourglass-split me-1"></i>{{ course.hours_spent }}h studied
+                &nbsp;·&nbsp;<span class="badge {% if course.complexity == 1 %}bg-success{% elif course.complexity == 2 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size:0.7rem">{{ course.complexity_label }}</span>
+              </div>
+            </div>
+            <div class="text-end">
+              <div class="fw-bold" style="color:var(--primary);font-size:1.2rem">{{ course.avg_quiz_score }}%</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">avg quiz score</div>
+            </div>
+          </div>
+
+          <!-- Topic performance bars -->
+          {% with attempts=course.attempts.all %}
+          {% if attempts %}
+          <div class="mt-3">
+            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:8px">Topic Performance</div>
+            {% for topic in course.get_topics_list|slice:":5" %}
+            {% with topic_attempts=course.attempts.all %}
+            <div class="perf-bar-wrap">
+              <span style="min-width:120px;color:var(--text-secondary)">{{ topic|truncatechars:18 }}</span>
+              <div class="perf-bar-bg">
+                <div class="perf-bar-fill" style="width:{{ course.completion_percentage }}%;background:linear-gradient(90deg,var(--primary),#8b5cf6)"></div>
+              </div>
+              <span style="min-width:36px;text-align:right;color:var(--text-muted);font-size:0.8rem">{{ course.avg_quiz_score }}%</span>
+            </div>
+            {% endwith %}
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+
+          <!-- Exam Feedback -->
+          {% if course.exam_feedback %}
+          <div class="mt-3 p-3 rounded" style="background:var(--success-light);border-left:3px solid var(--success)">
+            <div style="font-size:0.75rem;font-weight:700;color:var(--success);margin-bottom:4px"><i class="bi bi-chat-quote-fill me-1"></i>Your Post-Exam Reflection</div>
+            <div style="font-size:0.85rem;color:var(--text-secondary)">{{ course.exam_feedback }}</div>
+          </div>
+          {% else %}
+          <div class="mt-3">
+            <a href="{% url 'courses:detail' course.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-pencil me-1"></i> Add Post-Exam Reflection
+            </a>
+          </div>
+          {% endif %}
+
+          <!-- Quiz history link -->
+          <div class="mt-2">
+            <a href="{% url 'quizzes:history' course.pk %}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-clock-history me-1"></i> Full Quiz History
+            </a>
+            <a href="{% url 'ai_engine:schedule' course.pk %}" class="btn btn-sm btn-outline-secondary ms-1">
+              <i class="bi bi-calendar3 me-1"></i> Schedule History
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="bi bi-archive"></i></div>
+          <p>No completed exams yet. Your exam history will appear here after exam dates have passed.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Tab 4: Recent Quizzes (dark mode fixed) ── -->
+    <div class="tab-pane fade" id="tab-quiz">
+      {% if recent_attempts %}
+      <div class="table-responsive" style="background:var(--bg-secondary);border-radius:var(--radius-md)">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Course</th><th>Topic</th><th>Score</th><th>Q's</th><th>Time</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in recent_attempts %}
+            <tr>
+              <td class="fw-semibold" style="font-size:0.9rem">
+                {{ a.course.name|truncatechars:22 }}
+                {% if a.is_surprise %}<span class="badge ms-1" style="background:linear-gradient(135deg,#f59e0b,#ef4444);font-size:0.65rem">⚡ Surprise</span>{% endif %}
+              </td>
+              <td><span class="topic-pill">{{ a.topic }}</span></td>
+              <td>
+                <span class="badge {% if a.score_percent >= 70 %}bg-success{% elif a.score_percent >= 40 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size:0.8rem">
+                  {{ a.score_percent }}%
+                </span>
+              </td>
+              <td style="color:var(--text-muted);font-size:0.85rem">{{ a.correct_answers }}/{{ a.total_questions }}</td>
+              <td style="color:var(--text-muted);font-size:0.85rem">{{ a.time_taken_seconds }}s</td>
+              <td style="color:var(--text-muted);font-size:0.85rem">{{ a.created_at|date:"M d, H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="bi bi-clipboard-x"></i></div>
+          <p>No quiz attempts yet. Take a quiz to see results here!</p>
+          {% if courses %}
+          <a href="{% url 'quizzes:setup' courses.first.pk %}" class="btn btn-ai"><i class="bi bi-lightning-charge"></i> Take a Quiz</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+  </div><!-- /tab-content -->
+</div><!-- /card -->
 
 {% endblock %}

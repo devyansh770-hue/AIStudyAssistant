@@ -1,6 +1,9 @@
+import logging
 from google import genai
 from google.genai import types
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 def ask_tutor(question, course_name, topic, history):
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
@@ -42,6 +45,5 @@ def ask_tutor(question, course_name, topic, history):
         return response.text
 
     except Exception as e:
-        # Check your VS Code terminal for this specific output!
-        print(f"--- GEMINI ERROR: {e} ---") 
+        logger.error(f"Tutor Chat Error: {e}", exc_info=True)
         return "I'm sorry, I'm having trouble connecting to my tutor brain. Please try again in a moment."

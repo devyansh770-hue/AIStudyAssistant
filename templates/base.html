@@ -58,6 +58,12 @@
   <a href="{% if request.user.courses.exists %}{% url 'ai_engine:schedule' request.user.courses.first.pk %}{% else %}{% url 'courses:list' %}{% endif %}">
     <i class="bi bi-calendar3"></i> Study Schedule
   </a>
+  <a href="{% url 'ai_engine:review_queue' %}">
+    <i class="bi bi-arrow-repeat"></i> Review Queue
+  </a>
+  <a href="{% url 'ai_engine:concept_links' %}">
+    <i class="bi bi-diagram-3-fill"></i> Concept Linker
+  </a>
 
   <div class="sidebar-footer">
     <a href="{% url 'accounts:logout' %}">
@@ -83,9 +89,26 @@
         <button class="theme-btn" onclick="setTheme('dark')" title="Dark" id="theme-dark">🌙</button>
         <button class="theme-btn" onclick="setTheme('warm')" title="Warm" id="theme-warm">🌅</button>
       </div>
+
+      <!-- Study Streak Badge -->
+      {% with streak=request.user.streak %}
+      {% if streak %}
+      <a href="{% url 'accounts:profile' %}" class="streak-badge" title="Study Streak: {{ streak.current_streak }} days">
+        <span class="streak-flame">🔥</span>
+        <span class="streak-count">{{ streak.current_streak }}</span>
+      </a>
+      {% endif %}
+      {% endwith %}
+
       <!-- Profile -->
       <a href="{% url 'accounts:profile' %}" class="profile-btn">
-        <div class="avatar">{{ user.username|first|upper }}</div>
+        {% with profile=request.user.profile %}
+          {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" class="avatar-img" alt="avatar"/>
+          {% else %}
+            <div class="avatar">{{ user.username|first|upper }}</div>
+          {% endif %}
+        {% endwith %}
         <span class="d-none d-md-inline">{{ user.username }}</span>
       </a>
     </div>
@@ -117,7 +140,6 @@
     if (btn) btn.classList.add('active-theme');
   }
 
-  // Load saved theme
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.getElementById('htmlRoot').setAttribute('data-theme', savedTheme);
   updateThemeButtons(savedTheme);

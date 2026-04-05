@@ -18,6 +18,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Provider apps for Google OAuth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     # Third party
     'crispy_forms',
     'crispy_bootstrap5',
@@ -38,6 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     # axes middleware REMOVED
 ]
 
@@ -123,3 +129,69 @@ MESSAGE_TAGS = {
     messages_constants.WARNING: 'warning',
     messages_constants.ERROR:   'danger',
 }
+
+# ── MEDIA (profile avatars) ──
+MEDIA_URL  = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ── LOGGING ──
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'ai_engine': {'handlers': ['console'], 'level': 'DEBUG', 'propagate': False},
+        'quizzes':   {'handlers': ['console'], 'level': 'DEBUG', 'propagate': False},
+        'courses':   {'handlers': ['console'], 'level': 'DEBUG', 'propagate': False},
+        'dashboard': {'handlers': ['console'], 'level': 'DEBUG', 'propagate': False},
+    },
+}
+
+# ── ALLAUTH CONFIGURATION ──
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+
+# Minimal account settings so login drops straight in
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+         'APP': {
+             'client_id': 'dummy-client-id.apps.googleusercontent.com',
+             'secret': 'dummy-secret',
+             'key': ''
+         },
+         'SCOPE': [
+             'profile',
+             'email',
+         ],
+         'AUTH_PARAMS': {
+             'access_type': 'online',
+         }
+    }
+}
+
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'

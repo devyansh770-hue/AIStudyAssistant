@@ -141,6 +141,7 @@ const TOPIC      = "{{ topic }}";
 const DIFFICULTY = "{{ difficulty }}";
 let answers = {};
 let seconds = 0;
+window._lastInteractionTime = Date.now();
 
 const timerEl = document.getElementById('timer');
 setInterval(() => {
@@ -195,7 +196,6 @@ function selectAnswer(qIndex, answer, optIndex, qId) {
   sel.classList.add('selected');
 
   document.getElementById(`qstatus-${qIndex}`).textContent = 'Answered ✓';
-  document.getElementById(`qstatus-${qIndex}`).style.background = 'var(--success-light)';
   document.getElementById(`qstatus-${qIndex}`).style.color = 'var(--success)';
 
   const done = Object.keys(answers).length;
@@ -207,6 +207,19 @@ function selectAnswer(qIndex, answer, optIndex, qId) {
     document.getElementById('submitHint').textContent = '✅ All answered! Ready to submit.';
     document.getElementById('submitHint').style.color = 'var(--success)';
     document.getElementById('submitHint').style.fontWeight = '600';
+  }
+
+  // ── Cognitive Load Tracking ──
+  const is_correct = answer.trim().toLowerCase() === questions[qIndex].correct.trim().toLowerCase();
+  const timeTaken = Math.round((Date.now() - window._lastInteractionTime) / 1000);
+  window._lastInteractionTime = Date.now();
+  
+  if (window._cogLoadActive !== false) {
+    fetch('/ai/api/cognitive/update/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value },
+      body: JSON.stringify({ is_correct: is_correct, time_taken_seconds: timeTaken, difficulty: DIFFICULTY })
+    }).catch(e => console.log('CogLoad tracking error', e));
   }
 }
 
@@ -285,6 +298,9 @@ function showResults(data) {
     <div class="result-score" style="color:${color}">${data.score}%</div>
     <p style="color:var(--text-secondary);margin:12px 0 4px;font-size:1rem">${message}</p>
     <p style="color:var(--text-muted);font-size:0.88rem">${data.correct} correct out of ${data.total} questions</p>
+    
+    <div id="cogLoadSummary" class="mt-4 p-3 text-start mx-auto" style="max-width:320px; background:var(--bg-tertiary); border-radius:12px; font-size:0.85rem; display:none; border:1px solid var(--border-color);"></div>
+
     <div class="d-flex justify-content-center gap-3 mt-4">
       <a href="/quizzes/setup/${COURSE_ID}/" class="btn btn-ai px-4">
         <i class="bi bi-arrow-repeat"></i> Retake
@@ -299,6 +315,30 @@ function showResults(data) {
   el.innerHTML = html;
   el.style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Fetch cognitive load summary
+  fetch('/ai/api/cognitive/summarize/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value },
+    body: JSON.stringify({ course_id: COURSE_ID, topic: TOPIC })
+  }).then(r => r.json()).then(res => {
+    if (res.success && res.summary) {
+      const s = res.summary;
+      const ctr = document.getElementById('cogLoadSummary');
+      let emojiLoad = s.zone_label === 'flow' ? '🔥' : s.zone_label === 'overload' ? '😤' : '🚀';
+      ctr.innerHTML = `
+        <div class="d-flex justify-content-between mb-1">
+          <span style="color:var(--text-muted);">Cognitive Load</span>
+          <span class="fw-bold">${emojiLoad} ${s.avg_load}%</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span style="color:var(--text-muted);">Time in Flow Zone</span>
+          <span class="fw-bold">${s.flow_pct}%</span>
+        </div>
+      `;
+      ctr.style.display = 'block';
+    }
+  }).catch(e => console.log('Summary error', e));
 }
 
 renderQuiz();

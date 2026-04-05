@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Delete Course — {{ course.name }}{% endblock %}
+{% block page_title %}Delete Course{% endblock %}
+
+{% block extra_css %}
+<style>
+  .delete-card {
+    max-width: 520px;
+    margin: 40px auto;
+    text-align: center;
+  }
+  .delete-icon {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    margin: 0 auto 20px;
+  }
+  .course-name-highlight {
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 2px 10px;
+    border-radius: var(--radius-sm);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="delete-card card p-5 animate-fade-in-up">
+  <div class="delete-icon">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+  </div>
+
+  <h4 class="fw-bold mb-3">Delete this course?</h4>
+
+  <p style="color:var(--text-muted);font-size:0.95rem">
+    Are you sure you want to permanently delete
+    <span class="course-name-highlight">{{ course.name }}</span>?
+  </p>
+
+  <p style="color:var(--text-muted);font-size:0.85rem">
+    This will also delete all associated quizzes, quiz attempts, topics and AI-generated schedules. This action <strong>cannot be undone</strong>.
+  </p>
+
+  <div class="d-flex gap-2 justify-content-center mt-4">
+    <a href="{% url 'courses:detail' course.pk %}" class="btn btn-outline-secondary px-4">
+      <i class="bi bi-x-lg me-1"></i> Cancel
+    </a>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger px-4">
+        <i class="bi bi-trash3 me-1"></i> Delete Permanently
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

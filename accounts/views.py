@@ -1,13 +1,22 @@
-from django.shortcuts import render, redirect
+import logging
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
-from .models import CustomUser, UserProfile, OTPVerification, PasswordResetOTP
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from .models import CustomUser, UserProfile, OTPVerification, PasswordResetOTP, StudyStreak
 from .forms import (RegisterForm, OTPForm, LoginForm,
                     PasswordResetRequestForm, PasswordResetConfirmForm, ProfileForm)
 from .utils import send_otp_email
+
+logger = logging.getLogger(__name__)
+
+
+def _update_streak(user):
+    streak, _ = StudyStreak.objects.get_or_create(user=user)
+    streak.update_streak()
 
 
 def landing_page(request):
@@ -24,7 +33,7 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             UserProfile.objects.create(user=user)
-            # Generate and send OTP
+            StudyStreak.objects.create(user=user)
             otp_obj, _ = OTPVerification.objects.get_or_create(user=user)
             code = otp_obj.generate()
             try:
@@ -33,6 +42,7 @@ def register_view(request):
                 messages.success(request, f'OTP sent to {user.email}')
                 return redirect('accounts:verify_otp')
             except Exception as e:
+                logger.error(f"OTP email failed: {e}", exc_info=True)
                 user.delete()
                 messages.error(request, 'Failed to send OTP. Check email settings.')
     else:
@@ -45,7 +55,6 @@ def verify_otp(request):
     user_id = request.session.get('otp_user_id')
     if not user_id:
         return redirect('accounts:register')
-
     try:
         user = CustomUser.objects.get(pk=user_id)
         otp_obj = OTPVerification.objects.get(user=user)
@@ -56,26 +65,22 @@ def verify_otp(request):
         form = OTPForm(request.POST)
         if form.is_valid():
             entered = form.cleaned_data['code']
-
-            # Brute force protection
             if otp_obj.attempts >= 5:
                 messages.error(request, 'Too many wrong attempts. Please register again.')
                 user.delete()
                 return redirect('accounts:register')
-
             if otp_obj.is_expired():
                 messages.error(request, 'OTP expired. Please register again.')
                 user.delete()
                 return redirect('accounts:register')
-
             if entered == otp_obj.code:
                 user.is_active = True
                 user.is_verified = True
                 user.save()
                 otp_obj.delete()
                 del request.session['otp_user_id']
-                login(request, user,
-                      backend='django.contrib.auth.backends.ModelBackend')
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                _update_streak(user)
                 messages.success(request, f'Welcome {user.username}! Email verified.')
                 return redirect('dashboard:home')
             else:
@@ -85,11 +90,8 @@ def verify_otp(request):
                 messages.error(request, f'Wrong OTP. {remaining} attempts left.')
     else:
         form = OTPForm()
-
     return render(request, 'accounts/verify_otp.html', {
-        'form': form,
-        'email': user.email,
-        'attempts_left': 5 - otp_obj.attempts,
+        'form': form, 'email': user.email, 'attempts_left': 5 - otp_obj.attempts,
     })
 
 
@@ -122,6 +124,7 @@ def login_view(request):
                     messages.error(request, 'Please verify your email first.')
                     return redirect('accounts:login')
                 login(request, user)
+                _update_streak(user)
                 messages.success(request, f'Welcome back, {user.username}!')
                 return redirect('dashboard:home')
         messages.error(request, 'Invalid email or password.')
@@ -151,9 +154,7 @@ def password_reset_request(request):
                 messages.success(request, f'OTP sent to {email}')
                 return redirect('accounts:password_reset_verify')
             except CustomUser.DoesNotExist:
-                # Don't reveal if email exists
-                messages.success(request,
-                    'If that email is registered, an OTP has been sent.')
+                messages.success(request, 'If that email is registered, an OTP has been sent.')
     else:
         form = PasswordResetRequestForm()
     return render(request, 'accounts/password_reset_request.html', {'form': form})
@@ -166,12 +167,9 @@ def password_reset_verify(request):
         return redirect('accounts:password_reset_request')
     try:
         user = CustomUser.objects.get(pk=user_id)
-        otp_obj = PasswordResetOTP.objects.filter(
-            user=user, is_used=False
-        ).latest('created_at')
+        otp_obj = PasswordResetOTP.objects.filter(user=user, is_used=False).latest('created_at')
     except Exception:
         return redirect('accounts:password_reset_request')
-
     if request.method == 'POST':
         form = OTPForm(request.POST)
         if form.is_valid():
@@ -190,13 +188,10 @@ def password_reset_verify(request):
             else:
                 otp_obj.attempts += 1
                 otp_obj.save()
-                messages.error(request,
-                    f'Wrong OTP. {5 - otp_obj.attempts} attempts left.')
+                messages.error(request, f'Wrong OTP. {5 - otp_obj.attempts} attempts left.')
     else:
         form = OTPForm()
-    return render(request, 'accounts/password_reset_verify.html', {
-        'form': form, 'email': user.email
-    })
+    return render(request, 'accounts/password_reset_verify.html', {'form': form, 'email': user.email})
 
 
 def password_reset_confirm(request):
@@ -208,7 +203,6 @@ def password_reset_confirm(request):
         user = CustomUser.objects.get(pk=user_id)
     except CustomUser.DoesNotExist:
         return redirect('accounts:password_reset_request')
-
     if request.method == 'POST':
         form = PasswordResetConfirmForm(request.POST)
         if form.is_valid():
@@ -226,14 +220,19 @@ def password_reset_confirm(request):
 @login_required
 def profile_view(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    streak, _ = StudyStreak.objects.get_or_create(user=request.user)
     if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=profile)
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
-            request.user.username = request.POST.get('username', request.user.username)
-            request.user.save()
+            new_username = request.POST.get('username', '').strip()
+            if new_username:
+                request.user.username = new_username
+                request.user.save()
             messages.success(request, 'Profile updated!')
             return redirect('accounts:profile')
     else:
         form = ProfileForm(instance=profile)
-    return render(request, 'accounts/profile.html', {'form': form, 'profile': profile})
+    return render(request, 'accounts/profile.html', {
+        'form': form, 'profile': profile, 'streak': streak
+    })

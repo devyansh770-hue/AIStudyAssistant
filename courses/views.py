@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.http import require_POST
 from .models import Course, Topic
 from .forms import CourseForm
 
@@ -62,28 +63,35 @@ def course_delete(request, pk):
 
 
 @login_required
+@require_POST
 def log_hours(request, pk):
     course = get_object_or_404(Course, pk=pk, user=request.user)
-    if request.method == 'POST':
+    try:
         hours = float(request.POST.get('hours', 0))
-        course.hours_spent += hours
+        if hours <= 0 or hours > 16:
+            messages.error(request, 'Please enter between 0.25 and 16 hours.')
+            return redirect('courses:detail', pk=pk)
+        course.hours_spent += round(hours, 2)
         course.save()
         messages.success(request, f'{hours} hours logged!')
+    except (ValueError, TypeError):
+        messages.error(request, 'Invalid hours value.')
     return redirect('courses:detail', pk=pk)
 
 
 @login_required
+@require_POST
 def log_experience(request, pk):
     course = get_object_or_404(Course, pk=pk, user=request.user)
-    if request.method == 'POST':
-        feedback = request.POST.get('experience', '').strip()
-        course.exam_feedback = feedback
-        course.save()
-        messages.success(request, 'Experience logged! We hope you did well.')
+    feedback = request.POST.get('experience', '').strip()
+    course.exam_feedback = feedback
+    course.save()
+    messages.success(request, 'Experience logged! We hope you did well.')
     return redirect('courses:detail', pk=pk)
 
 
 @login_required
+@require_POST
 def topic_toggle(request, pk):
     topic = get_object_or_404(Topic, pk=pk, course__user=request.user)
     topic.is_completed = not topic.is_completed

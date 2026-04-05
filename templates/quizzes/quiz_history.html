@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Quiz History — {{ course.name }}{% endblock %}
+{% block page_title %}Quiz History{% endblock %}
+
+{% block extra_css %}
+<style>
+  .history-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+    border-radius: var(--radius-xl);
+    padding: 28px 32px;
+    color: white;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .history-header::before {
+    content: '';
+    position: absolute;
+    top: -50%; right: -10%;
+    width: 250px; height: 250px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .history-header h2, .history-header p { position: relative; z-index: 1; }
+
+  .avg-ring {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.3rem;
+    color: white;
+    position: relative;
+    z-index: 1;
+  }
+  .avg-ring.good { background: linear-gradient(135deg, #22c55e, #16a34a); }
+  .avg-ring.ok { background: linear-gradient(135deg, #eab308, #f59e0b); }
+  .avg-ring.poor { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+  .attempt-row {
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+    margin-bottom: 8px;
+    background: var(--bg-secondary);
+  }
+  .attempt-row:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    transform: translateX(4px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="history-header animate-fade-in-up">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h2 class="fw-bold mb-1" style="font-size:1.4rem">
+        <i class="bi bi-clock-history me-2"></i>{{ course.name }}
+      </h2>
+      <p class="mb-0 opacity-75" style="font-size:0.9rem">
+        {{ attempts|length }} quiz attempt{{ attempts|length|pluralize }}
+      </p>
+    </div>
+    <div class="avg-ring {% if avg >= 70 %}good{% elif avg >= 40 %}ok{% else %}poor{% endif %}">
+      {{ avg }}%
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-ai">
+    <i class="bi bi-lightning-charge"></i> New Quiz
+  </a>
+  <a href="{% url 'courses:detail' course.pk %}" class="btn btn-outline-primary">
+    <i class="bi bi-arrow-left"></i> Back to Course
+  </a>
+</div>
+
+<!-- Attempts List -->
+{% if attempts %}
+<div class="card p-4">
+  <div class="section-header mb-3">
+    <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
+      <i class="bi bi-list-check"></i>
+    </div>
+    <h6>All Attempts</h6>
+  </div>
+
+  {% for a in attempts %}
+  <div class="attempt-row d-flex justify-content-between align-items-center">
+    <div>
+      <div class="fw-semibold" style="font-size:0.9rem">
+        <span class="topic-pill">{{ a.topic }}</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">
+        {{ a.created_at|date:"M d, Y — H:i" }} · {{ a.time_taken_seconds }}s · {{ a.correct_answers }}/{{ a.total_questions }} correct
+      </div>
+    </div>
+    <span class="badge {% if a.score_percent >= 70 %}bg-success{% elif a.score_percent >= 40 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size:0.9rem;min-width:56px;text-align:center">
+      {{ a.score_percent }}%
+    </span>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card p-5">
+  <div class="empty-state">
+    <div class="empty-icon">
+      <i class="bi bi-clipboard-x"></i>
+    </div>
+    <p>No quiz attempts yet for this course.</p>
+    <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-ai">
+      <i class="bi bi-lightning-charge"></i> Take Your First Quiz
+    </a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

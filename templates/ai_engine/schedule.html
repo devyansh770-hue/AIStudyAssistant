@@ -5,84 +5,72 @@
 {% block extra_css %}
 <style>
   .schedule-day {
-    display: flex;
-    gap: 16px;
-    padding: 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 10px;
+    display: flex; gap: 16px; padding: 20px;
+    border-radius: var(--radius-md); margin-bottom: 10px;
     transition: all var(--transition-fast);
     border: 1px solid var(--border-light);
     animation: fadeInUp 0.4s ease-out both;
   }
-  .schedule-day:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    transform: translateX(4px);
-  }
-  .schedule-day:nth-child(odd) { background: var(--bg-tertiary); }
+  .schedule-day:hover { border-color:var(--primary); background:var(--primary-light); transform:translateX(4px); }
+  .schedule-day:nth-child(odd)  { background: var(--bg-tertiary); }
   .schedule-day:nth-child(even) { background: var(--bg-secondary); }
-
-  .day-number {
-    text-align: center;
-    min-width: 52px;
-    flex-shrink: 0;
-  }
-  .day-number .label { font-weight: 700; color: var(--primary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
-  .day-number .num { font-weight: 800; font-size: 1.5rem; color: var(--text-primary); line-height: 1; }
+  .day-number { text-align:center; min-width:52px; flex-shrink:0; }
+  .day-number .label { font-weight:700; color:var(--primary); font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; }
+  .day-number .num  { font-weight:800; font-size:1.5rem; color:var(--text-primary); line-height:1; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="row g-4">
-  <div class="col-md-4">
-    <div class="card p-4 animate-fade-in-up">
+
+  <!-- ── Left Panel: Course Info + Actions ── -->
+  <div class="col-md-3">
+    <div class="card p-4 animate-fade-in-up mb-4">
       <div class="section-header">
-        <div class="section-icon" style="background:var(--success-light);color:var(--success)">
-          <i class="bi bi-calendar3"></i>
-        </div>
+        <div class="section-icon" style="background:var(--success-light);color:var(--success)"><i class="bi bi-calendar3"></i></div>
         <h6>{{ course.name }}</h6>
       </div>
 
       <div class="mb-3">
         <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Exam Date</small>
-        <p class="fw-semibold" style="color:var(--danger)">{{ course.exam_date }}</p>
+        <p class="fw-semibold mb-0" style="color:var(--danger)">{{ course.exam_date }}</p>
       </div>
 
       <div class="mb-3">
-        <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">{% if is_exam_over %}Status{% else %}Days Remaining{% endif %}</small>
+        <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">
+          {% if is_exam_over %}Status{% else %}Days Remaining{% endif %}
+        </small>
         {% if is_exam_over %}
-          <p class="fw-bold" style="color:var(--warning);font-size:1.5rem;line-height:1">Exam Over</p>
+          <p class="fw-bold mb-0" style="color:var(--warning);font-size:1.5rem;line-height:1">Exam Over</p>
         {% else %}
-          <p class="fw-bold" style="color:var(--danger);font-size:2rem;line-height:1">{{ course.days_until_exam }}</p>
+          <p class="fw-bold mb-0" style="color:var(--danger);font-size:2rem;line-height:1">{{ course.days_until_exam }}</p>
         {% endif %}
       </div>
 
       <div class="mb-3">
         <small style="color:var(--text-muted);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Topics</small>
-        <p style="color:var(--text-secondary);font-size:0.88rem;line-height:1.6">{{ course.topics }}</p>
+        <p style="color:var(--text-secondary);font-size:0.88rem;line-height:1.6;margin:0">{{ course.topics }}</p>
       </div>
 
       {% if is_exam_over %}
-        <div class="alert alert-warning mb-3" style="border-radius:var(--radius-md);border:none;background:var(--warning-light);color:var(--text-primary)">
+        <div class="alert mb-3" style="border-radius:var(--radius-md);border:none;background:var(--warning-light);color:var(--text-primary)">
           <i class="bi bi-clock-history text-warning"></i> This exam date has passed.
         </div>
-        
         {% if not course.exam_feedback %}
-          <form method="post" action="{% url 'courses:log_experience' course.pk %}" class="mt-4">
+          <form method="post" action="{% url 'courses:log_experience' course.pk %}">
             {% csrf_token %}
             <label class="form-label fw-semibold" style="font-size:0.88rem">How did the exam go?</label>
-            <textarea name="experience" class="form-control mb-3" rows="3" placeholder="Share your experience... It will help the AI tutor tailor future advice!"></textarea>
-            <button type="submit" class="btn btn-warning w-100 fw-bold" style="color:white;font-size:0.95rem">
+            <textarea name="experience" class="form-control mb-3" rows="3" placeholder="Share your experience..."></textarea>
+            <button type="submit" class="btn btn-warning w-100 fw-bold" style="color:white">
               <i class="bi bi-journal-check"></i> Submit Feedback
             </button>
           </form>
         {% else %}
-          <div class="card p-3 mt-3" style="background:var(--bg-tertiary);border:1px dashed var(--border-light)">
+          <div class="card p-3" style="background:var(--bg-tertiary);border:1px dashed var(--border-light)">
             <label class="fw-semibold mb-1" style="font-size:0.88rem;color:var(--text-muted)">Your Feedback:</label>
             <p style="font-size:0.9rem;margin:0">{{ course.exam_feedback }}</p>
           </div>
         {% endif %}
-
       {% else %}
         <form method="post" onsubmit="showLoading(this)">
           {% csrf_token %}
@@ -92,17 +80,55 @@
         </form>
       {% endif %}
     </div>
+
+    <!-- ── Schedule History ── -->
+    {% if history %}
+    <div class="card p-3 animate-fade-in-up" style="animation-delay:0.1s">
+      <div class="section-header mb-2">
+        <div class="section-icon" style="background:var(--secondary-light);color:var(--secondary)"><i class="bi bi-clock-history"></i></div>
+        <h6 style="font-size:0.85rem">Schedule History</h6>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:10px">{{ history|length }} plan{{ history|length|pluralize }} generated</div>
+      {% for h in history %}
+      <div class="schedule-history-item {% if forloop.first %}active{% endif %}" onclick="showHistorySchedule({{ forloop.counter0 }})">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold" style="font-size:0.8rem;color:var(--text-primary)">
+              {% if h.label %}{{ h.label }}{% else %}Plan {{ forloop.counter }}{% endif %}
+            </div>
+            <div style="font-size:0.72rem;color:var(--text-muted)">{{ h.generated_at|date:"d M Y, H:i" }}</div>
+          </div>
+          <span style="font-size:0.75rem;color:var(--primary)">{{ h.schedule_data|length }}d</span>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Hidden JSON for JS -->
+      <script>
+        const scheduleHistories = [
+          {% for h in history %}
+          (() => {
+            let data = {{ h.schedule_data|safe }};
+            data._history_id = "{{ h.id }}";
+            return data;
+          })(){% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ];
+      </script>
+    </div>
+    {% endif %}
   </div>
 
-  <div class="col-md-8">
+  <!-- ── Right Panel: Schedule Display ── -->
+  <div class="col-md-9">
     {% if schedule %}
-      <div class="card p-4 animate-fade-in-up" style="animation-delay:0.1s">
-        <div class="section-header">
-          <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
-            <i class="bi bi-calendar-check"></i>
-          </div>
-          <h6>Your Personalized Study Plan</h6>
-        </div>
+    <div class="card p-4 animate-fade-in-up" style="animation-delay:0.1s">
+      <div class="section-header">
+        <div class="section-icon" style="background:var(--primary-light);color:var(--primary)"><i class="bi bi-calendar-check"></i></div>
+        <h6 id="scheduleTitle">Your Personalized Study Plan</h6>
+        <span class="ms-auto badge" style="background:var(--primary-light);color:var(--primary);font-size:0.75rem" id="scheduleLabel">Current</span>
+      </div>
+      <div id="scheduleDays">
         {% for day in schedule %}
         <div class="schedule-day" style="animation-delay:{{ forloop.counter0 }}00ms">
           <div class="day-number">
@@ -111,8 +137,19 @@
           </div>
           <div style="flex:1">
             <div class="fw-semibold" style="font-size:0.95rem;margin-bottom:6px">{{ day.topic }}</div>
-            <ul style="margin:0 0 6px;padding-left:20px">
-              {% for task in day.tasks %}<li style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">{{ task }}</li>{% endfor %}
+            <ul style="margin:0 0 6px;padding-left:0;list-style:none">
+              {% for task in day.tasks %}
+              <li style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7;margin-bottom:4px;display:flex;align-items:flex-start;gap:8px">
+                <input type="checkbox" class="form-check-input mt-1 task-checkbox" 
+                       data-day-idx="{{ forloop.parentloop.counter0 }}" 
+                       data-task-idx="{{ forloop.counter0 }}"
+                       {% if task.completed %}checked{% endif %}
+                       onchange="toggleTask(this, '{{ history.first.id }}')">
+                <span class="{% if task.completed %}text-decoration-line-through text-muted{% endif %}">
+                  {% if task.title %}{{ task.title }}{% else %}{{ task }}{% endif %}
+                </span>
+              </li>
+              {% endfor %}
             </ul>
             {% if day.tip %}
             <div style="font-size:0.82rem;color:var(--success);display:flex;align-items:center;gap:4px">
@@ -126,30 +163,122 @@
         </div>
         {% endfor %}
       </div>
+    </div>
     {% else %}
-      <div class="card p-4">
-        <div class="empty-state">
-          <div class="empty-icon">
-            <i class="bi bi-calendar-plus"></i>
-          </div>
-          {% if is_exam_over %}
-            <p>The exam has already passed. A schedule wasn't generated.</p>
-          {% else %}
-            <p>Click "Generate AI Schedule" to create your personalized study plan.</p>
-          {% endif %}
-        </div>
+    <div class="card p-4">
+      <div class="empty-state">
+        <div class="empty-icon"><i class="bi bi-calendar-plus"></i></div>
+        {% if is_exam_over %}
+          <p>The exam has already passed.</p>
+        {% else %}
+          <p>Click "Generate AI Schedule" to create your personalized study plan.</p>
+        {% endif %}
       </div>
+    </div>
     {% endif %}
   </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
 function showLoading(form) {
   const btn = form.querySelector('#generateBtn');
   if (btn) {
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Generating... (this takes a moment)';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Generating... (this takes a moment)';
     btn.classList.add('disabled');
-    // We do not actually disable the button because it causes some browsers to not submit the form.
-    // Adding the disabled class provides visual feedback.
+  }
+}
+
+function showHistorySchedule(idx) {
+  if (typeof scheduleHistories === 'undefined') return;
+  const data = scheduleHistories[idx];
+  if (!data) return;
+
+  // Highlight active history item
+  document.querySelectorAll('.schedule-history-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Render schedule days
+  const container = document.getElementById('scheduleDays');
+  if (!container) return;
+  const label = document.getElementById('scheduleLabel');
+  if (label) label.textContent = idx === 0 ? 'Current' : 'Historical';
+
+  container.innerHTML = data.map((day, i) => `
+    <div class="schedule-day" style="animation:fadeInUp 0.3s ease both;animation-delay:${i * 50}ms">
+      <div class="day-number">
+        <div class="label">Day</div>
+        <div class="num">${day.day}</div>
+      </div>
+      <div style="flex:1">
+        <div class="fw-semibold" style="font-size:0.95rem;margin-bottom:6px">          ${day.topic || ''}
+        </div>
+        <ul style="margin:0 0 6px;padding-left:0;list-style:none">
+          ${(day.tasks || []).map((t, idx) => `
+            <li style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7;margin-bottom:4px;display:flex;align-items:flex-start;gap:8px">
+              <input type="checkbox" class="form-check-input mt-1 task-checkbox"
+                     ${t.completed ? 'checked' : ''}
+                     onchange="toggleTask(this, '${data._history_id}', ${i}, ${idx})">
+              <span class="${t.completed ? 'text-decoration-line-through text-muted' : ''}">
+                ${t.title || t}
+              </span>
+            </li>
+          `).join('')}
+        </ul>
+        ${day.tip ? `<div style="font-size:0.82rem;color:var(--success);display:flex;align-items:center;gap:4px"><i class="bi bi-lightbulb-fill"></i> ${day.tip}</div>` : ''}
+      </div>
+      <div class="text-end" style="min-width:60px">
+        <span class="badge" style="background:var(--primary-light);color:var(--primary);font-size:0.82rem;padding:6px 12px">${day.duration_hours || 0}h</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleTask(checkbox, historyId, dayIdx, taskIdx) {
+  // If called from the server-rendered template, we use data attributes
+  if (dayIdx === undefined) dayIdx = checkbox.getAttribute('data-day-idx');
+  if (taskIdx === undefined) taskIdx = checkbox.getAttribute('data-task-idx');
+  if (!historyId) {
+    // Current active schedule doesn't easily map a historyId unless embedded, 
+    // but the first history item is always the active one. 
+    console.error("Missing history ID mapping."); 
+    checkbox.checked = !checkbox.checked; // Reset
+    return;
+  }
+
+  const span = checkbox.nextElementSibling;
+  
+  try {
+    const res = await fetch("{% url 'ai_engine:api_toggle_task' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: JSON.stringify({
+        history_id: historyId,
+        day_idx: dayIdx,
+        task_idx: taskIdx
+      })
+    });
+    
+    const data = await res.json();
+    if (data.success) {
+      if (data.completed) {
+        span.classList.add('text-decoration-line-through', 'text-muted');
+      } else {
+        span.classList.remove('text-decoration-line-through', 'text-muted');
+      }
+    } else {
+      checkbox.checked = !checkbox.checked; // Reset on failure
+      alert("Error toggling task: " + data.error);
+    }
+  } catch(e) {
+    checkbox.checked = !checkbox.checked; // Reset on error
+    console.error(e);
   }
 }
 </script>

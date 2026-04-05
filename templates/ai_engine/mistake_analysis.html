@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% block title %}Mistake Analysis — {{ course.name }}{% endblock %}
+{% block page_title %}🔍 Mistake Analyzer{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Pattern Cards ── */
+.pattern-card {
+  border-radius:16px; padding:24px;
+  border:1px solid var(--border-color);
+  background:var(--bg-secondary);
+  transition:all .25s ease;
+  position:relative; overflow:hidden;
+}
+.pattern-card::before {
+  content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+}
+.sev-high   .pattern-card::before { background:#ef4444; }
+.sev-medium .pattern-card::before { background:#f59e0b; }
+.sev-low    .pattern-card::before { background:#10b981; }
+.pattern-card:hover { transform:translateY(-3px); box-shadow:var(--card-shadow-hover); }
+
+.sev-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:12px; font-size:.72rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px;
+}
+.sev-high   .sev-badge { background:rgba(239,68,68,.12);  color:#ef4444; }
+.sev-medium .sev-badge { background:rgba(245,158,11,.12); color:#f59e0b; }
+.sev-low    .sev-badge { background:rgba(16,185,129,.12); color:#10b981; }
+
+.pattern-icon { font-size:2.4rem; margin-bottom:12px; display:block; }
+.gemini-insight {
+  background:var(--bg-tertiary); border-radius:10px; padding:12px 16px;
+  font-size:.86rem; color:var(--text-secondary); line-height:1.6;
+  border-left:3px solid var(--primary); margin-top:12px;
+}
+.fix-btn {
+  margin-top:14px; display:inline-flex; align-items:center; gap:6px;
+  font-size:.82rem; font-weight:600; padding:6px 14px; border-radius:8px;
+  text-decoration:none;
+  background:var(--primary-light); color:var(--primary);
+  border:1px solid rgba(99,102,241,.2);
+  transition:all .2s;
+}
+.fix-btn:hover { background:var(--primary); color:white; }
+
+/* ── Heatmap ── */
+.heatmap-grid { display:grid; gap:8px; }
+.heatmap-row  { display:flex; align-items:center; gap:10px; }
+.heatmap-label { width:140px; font-size:.82rem; color:var(--text-secondary);
+                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex-shrink:0; }
+.heatmap-bar-track { flex:1; height:24px; background:var(--bg-tertiary); border-radius:6px; overflow:hidden; position:relative; }
+.heatmap-bar-fill  { height:100%; border-radius:6px; display:flex; align-items:center;
+                     justify-content:flex-end; padding-right:8px;
+                     font-size:.75rem; font-weight:700; color:white;
+                     transition:width 1s cubic-bezier(.4,0,.2,1) .2s; }
+.heatmap-count     { font-size:.75rem; color:var(--text-muted); min-width:50px; text-align:right; }
+
+/* ── Refresh spinner ── */
+.spin { animation: spin 1s linear infinite; display:inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Empty ── */
+.empty-state-sm { padding:40px 24px; text-align:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+  <div class="d-flex align-items-center gap-3">
+    <a href="{% url 'courses:detail' course.pk %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i> Back to Course
+    </a>
+    <div>
+      <h5 class="mb-0 fw-bold" style="color:var(--text-primary)">{{ course.name }}</h5>
+      <small style="color:var(--text-muted)">{{ total_attempts }} total quiz attempt{{ total_attempts|pluralize }}</small>
+    </div>
+  </div>
+  <a href="?refresh=1" id="refreshBtn" class="btn btn-sm" style="background:var(--primary-light);color:var(--primary);border:1px solid rgba(99,102,241,.2);">
+    <i class="bi bi-arrow-clockwise" id="refreshIcon"></i> Refresh Analysis
+  </a>
+</div>
+
+{% if total_attempts == 0 %}
+<div class="card p-5 text-center animate-fade-in-up">
+  <div style="font-size:4rem;margin-bottom:16px;">🧩</div>
+  <h4 class="fw-bold mb-2" style="color:var(--text-primary)">No Mistakes Yet!</h4>
+  <p style="color:var(--text-muted)">Complete some quizzes first so I can analyze your error patterns.</p>
+  <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-ai px-4 mt-2">
+    <i class="bi bi-lightning-charge-fill"></i> Start a Quiz
+  </a>
+</div>
+
+{% elif not patterns %}
+<div class="card p-5 text-center animate-fade-in-up">
+  <div style="font-size:4rem;margin-bottom:16px;">🏆</div>
+  <h4 class="fw-bold mb-2" style="color:var(--text-primary)">No Significant Patterns Found</h4>
+  <p style="color:var(--text-muted)">Your scores are consistently good! Keep practicing to maintain this level.</p>
+</div>
+
+{% else %}
+<div class="row g-4">
+
+  <!-- ── Left: Pattern Cards ── -->
+  <div class="col-lg-7">
+    <h6 class="fw-bold mb-3" style="color:var(--text-muted);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;">
+      Detected Patterns ({{ patterns|length }})
+    </h6>
+    <div class="d-flex flex-column gap-3 stagger-children">
+      {% for p in patterns %}
+      <div class="sev-{{ p.severity }}">
+        <div class="pattern-card animate-fade-in-up">
+          <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+            <div>
+              <span class="pattern-icon">{{ p.icon }}</span>
+              <h6 class="fw-bold mb-1" style="color:var(--text-primary)">{{ p.title }}</h6>
+            </div>
+            <span class="sev-badge">{{ p.severity }}</span>
+          </div>
+
+          <!-- Pattern-specific details -->
+          {% if p.pattern_type == 'topic_weakness' %}
+            {% for wt in p.details.weak_topics %}
+            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size:.84rem;">
+              <span style="color:var(--text-secondary)">{{ wt.topic }}</span>
+              <span class="badge" style="background:rgba(239,68,68,.12);color:#ef4444;">{{ wt.avg_score }}%</span>
+            </div>
+            {% endfor %}
+          {% elif p.pattern_type == 'difficulty_ceiling' %}
+            <p style="font-size:.86rem;color:var(--text-secondary);margin:0 0 6px;">
+              You struggle most at <strong>{{ p.details.difficulty_ceiling }}</strong> difficulty.
+            </p>
+          {% elif p.pattern_type == 'time_pressure' %}
+            <p style="font-size:.86rem;color:var(--text-secondary);margin:0 0 6px;">
+              {{ p.details.rushed_attempts }} rushed attempts averaging
+              <strong>{{ p.details.avg_rushed_score }}%</strong> score.
+            </p>
+          {% elif p.pattern_type == 'conceptual_confusion' %}
+            {% for cc in p.details.repeated_failure_concepts %}
+            <small style="color:var(--text-muted)">❌ "{{ cc.hint }}…" × {{ cc.occurrences }}</small><br>
+            {% endfor %}
+          {% endif %}
+
+          {% if p.gemini_insight %}
+          <div class="gemini-insight">
+            <small style="color:var(--primary);font-weight:600;">✦ Gemini Insight</small><br>
+            {{ p.gemini_insight }}
+          </div>
+          {% endif %}
+
+          <a href="{% url 'ai_engine:chat' course.pk %}" class="fix-btn">
+            <i class="bi bi-robot"></i> Ask AI Tutor to Fix This
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Right: Heatmap ── -->
+  <div class="col-lg-5">
+    <h6 class="fw-bold mb-3" style="color:var(--text-muted);font-size:.75rem;letter-spacing:1px;text-transform:uppercase;">
+      Topic Performance Heatmap
+    </h6>
+    <div class="card p-4 animate-fade-in-up" style="animation-delay:.1s">
+      <div id="heatmapBody"></div>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="card p-4 mt-3 animate-fade-in-up" style="animation-delay:.15s">
+      <div class="section-header mb-3">
+        <div class="section-icon" style="background:var(--primary-light);color:var(--primary)">
+          <i class="bi bi-graph-up"></i>
+        </div>
+        <h6>Quick Actions</h6>
+      </div>
+      <div class="d-flex flex-column gap-2">
+        <a href="{% url 'ai_engine:predict_score' course.pk %}" class="btn btn-sm" style="background:var(--primary-light);color:var(--primary);border:1px solid rgba(99,102,241,.2); text-align:left;">
+          <i class="bi bi-graph-up-arrow"></i> View Score Prediction
+        </a>
+        <a href="{% url 'ai_engine:review_queue' %}" class="btn btn-sm" style="background:var(--success-light);color:var(--success);border:1px solid rgba(16,185,129,.2); text-align:left;">
+          <i class="bi bi-calendar-check"></i> Review Queue
+        </a>
+        <a href="{% url 'quizzes:setup' course.pk %}" class="btn btn-ai btn-sm text-start">
+          <i class="bi bi-lightning-charge-fill"></i> Practice Weak Topics
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const heatmapRaw = {{ heatmap }};
+
+// Render heatmap bars dynamically from JSON
+(function renderHeatmap() {
+  const body = document.getElementById('heatmapBody');
+  if (!body || !heatmapRaw.length) {
+    if (body) body.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem;">No quiz data yet.</p>';
+    return;
+  }
+  heatmapRaw.forEach(item => {
+    const avg = item.avg;
+    const bg = avg >= 75
+      ? 'linear-gradient(90deg,#10b981,#059669)'
+      : avg >= 50
+        ? 'linear-gradient(90deg,#f59e0b,#d97706)'
+        : 'linear-gradient(90deg,#ef4444,#dc2626)';
+    const row = document.createElement('div');
+    row.className = 'heatmap-row mb-2';
+    row.innerHTML = `
+      <span class="heatmap-label" title="${item.topic}">${item.topic}</span>
+      <div class="heatmap-bar-track">
+        <div class="heatmap-bar-fill" style="width:0%;background:${bg};">${avg}%</div>
+      </div>
+      <span class="heatmap-count">${item.count}×</span>
+    `;
+    body.appendChild(row);
+    setTimeout(() => {
+      row.querySelector('.heatmap-bar-fill').style.width = avg + '%';
+    }, 300);
+  });
+})();
+
+// Refresh button spinner
+document.getElementById('refreshBtn')?.addEventListener('click', function() {
+  document.getElementById('refreshIcon').classList.add('spin');
+});
+</script>
+{% endblock %}

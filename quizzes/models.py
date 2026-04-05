@@ -4,6 +4,7 @@ from courses.models import Course
 
 User = get_user_model()
 
+
 class Question(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='questions')
     topic = models.CharField(max_length=200)
@@ -29,6 +30,7 @@ class QuizAttempt(models.Model):
     correct_answers = models.IntegerField(default=0)
     score_percent = models.FloatField(default=0.0)
     time_taken_seconds = models.IntegerField(default=0)
+    is_surprise = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -36,3 +38,29 @@ class QuizAttempt(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.course.name} - {self.score_percent}%"
+
+    def confidence_label(self):
+        if self.score_percent >= 80:
+            return ("You're well prepared! Keep it up! 🚀", "success")
+        elif self.score_percent >= 60:
+            return ("Good progress! A bit more practice needed. 📖", "warning")
+        else:
+            return ("You need to study more before the exam! 💪", "danger")
+
+
+class SurpriseTest(models.Model):
+    """Tracks surprise test triggers per course per user."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='surprise_tests')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='surprise_tests')
+    triggered_at = models.DateTimeField(auto_now_add=True)
+    attempt = models.OneToOneField(
+        QuizAttempt, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='surprise_test'
+    )
+    dismissed = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-triggered_at']
+
+    def __str__(self):
+        return f"Surprise for {self.user.username} — {self.course.name}"

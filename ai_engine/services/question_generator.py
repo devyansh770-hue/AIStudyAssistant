@@ -1,7 +1,10 @@
 import json
+import logging
 from google import genai
 from google.genai import types
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 def generate_questions(topic, course_name, difficulty, count):
     # 1. Initialize the client using your settings API key
@@ -40,8 +43,5 @@ def generate_questions(topic, course_name, difficulty, count):
         return response.parsed if response.parsed else []
 
     except Exception as e:
-        # Check your VS Code terminal for the exact error (like 429 Quota)
-        print(f"--- Quiz Generation Error ---")
-        print(f"Details: {str(e)}")
-        print(f"-----------------------------")
+        logger.error(f"Quiz Generation Error: {e}", exc_info=True)
         return []
