@@ -95,8 +95,9 @@ Rules:
                                     "id":    {"type": "STRING"},
                                     "label": {"type": "STRING"},
                                     "type":  {"type": "STRING"},
+                                    "description": {"type": "STRING", "description": "A 1-2 sentence quick summary defining this concept for last minute revision."}
                                 },
-                                "required": ["id", "label", "type"]
+                                "required": ["id", "label", "type", "description"]
                             }
                         },
                         "edges": {
@@ -155,7 +156,6 @@ def _enrich_with_mastery(graph_data, course):
             **node,
             'mastery':    score,
             'color':      mastery['color'],
-            'font':       {'color': '#ffffff'},
             'borderWidth': 2,
             'size':       _node_size(node.get('type', 'concept')),
         })

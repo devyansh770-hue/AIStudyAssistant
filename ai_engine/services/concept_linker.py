@@ -57,11 +57,15 @@ def find_concept_links(user, force_refresh=False):
             ca, cb = courses[i], courses[j]
             sim    = _cosine_similarity(tfidf[ca.id], tfidf[cb.id])
 
-            if sim < 0.05:
-                continue  # No meaningful overlap
+            if sim < 0.01 and len(courses) > 2:
+                # Only skip if extremely low overlap AND user has many courses to avoid API spam.
+                # For 2 courses, we'll try our best.
+                continue
 
-            shared = _gemini_concept_links(ca, cb, sim)
-            strength = min(1.0, sim * 2)   # normalize 0-1
+            # Give a minimum floor of 0.2 to sim so Gemini always has something to work with.
+            effective_sim = max(0.2, sim)
+            shared = _gemini_concept_links(ca, cb, effective_sim)
+            strength = min(1.0, effective_sim * 2)   # normalize 0-1
 
             # Persist
             ConceptLink.objects.update_or_create(

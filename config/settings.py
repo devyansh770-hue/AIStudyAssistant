@@ -111,7 +111,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_SECURE = False        # True in production
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
 
 # ── EMAIL (for OTP) ──
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -179,8 +179,8 @@ ACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
          'APP': {
-             'client_id': 'dummy-client-id.apps.googleusercontent.com',
-             'secret': 'dummy-secret',
+             'client_id': os.getenv('GOOGLE_CLIENT_ID', 'dummy-client-id.apps.googleusercontent.com'),
+             'secret': os.getenv('GOOGLE_CLIENT_SECRET', 'dummy-secret'),
              'key': ''
          },
          'SCOPE': [
@@ -195,3 +195,6 @@ SOCIALACCOUNT_PROVIDERS = {
 
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Bypass intermediate login page
+SOCIALACCOUNT_LOGIN_ON_GET = True

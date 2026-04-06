@@ -60,6 +60,7 @@ def view_schedule(request, course_id):
             'schedule': schedule,
             'is_exam_over': is_exam_over,
             'history': history,
+            'all_courses': Course.objects.filter(user=request.user),
         })
 
     return render(request, 'ai_engine/schedule.html', {
@@ -67,13 +68,14 @@ def view_schedule(request, course_id):
         'schedule': schedule,
         'is_exam_over': is_exam_over,
         'history': history,
+        'all_courses': Course.objects.filter(user=request.user),
     })
 
 
 @login_required
 def global_schedule_view(request):
     courses = Course.objects.filter(user=request.user)
-    upcoming_courses = [c for c in courses if c.days_until_exam() >= 0]
+    upcoming_courses = list(courses)
     schedule = request.session.get('global_schedule')
 
     if request.method == 'POST' and upcoming_courses:
@@ -83,11 +85,12 @@ def global_schedule_view(request):
             for a in QuizAttempt.objects.filter(course=c):
                 topic_scores.setdefault(a.topic, []).append(a.score_percent)
             hist_perf = {t: round(sum(v)/len(v), 1) for t, v in topic_scores.items()}
+            days = c.days_until_exam()
             courses_data.append({
                 "name": c.name,
                 "topics": c.topics,
                 "complexity": c.complexity,
-                "days_left": c.days_until_exam(),
+                "days_left": days if days > 0 else 1,
                 "historical_performance": hist_perf
             })
         total_hours = sum(c.daily_study_hours for c in upcoming_courses)
@@ -195,7 +198,7 @@ def predict_score_view(request, course_id):
     prediction = predict_exam_score(course, request.user)
     all_attempts = QuizAttempt.objects.filter(user=request.user, course=course).order_by('created_at')
     # Sparkline data (last 15 attempts)
-    sparkline = [round(a.score_percent, 1) for a in all_attempts[-15:]]
+    sparkline = [round(a.score_percent, 1) for a in list(all_attempts)[-15:]]
     return render(request, 'ai_engine/score_prediction.html', {
         'course':     course,
         'prediction': prediction,
@@ -357,6 +360,7 @@ def knowledge_graph_view(request, course_id):
     return render(request, 'ai_engine/knowledge_graph.html', {
         'course':     course,
         'graph_json': json.dumps(graph_data),
+        'graph_dict': graph_data,
         'topic_avg':  topic_avg,
         'node_count': len(graph_data.get('nodes', [])),
         'edge_count': len(graph_data.get('edges', [])),

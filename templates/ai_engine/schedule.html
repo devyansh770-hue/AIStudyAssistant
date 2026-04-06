@@ -26,9 +26,20 @@
   <!-- ── Left Panel: Course Info + Actions ── -->
   <div class="col-md-3">
     <div class="card p-4 animate-fade-in-up mb-4">
-      <div class="section-header">
-        <div class="section-icon" style="background:var(--success-light);color:var(--success)"><i class="bi bi-calendar3"></i></div>
-        <h6>{{ course.name }}</h6>
+      <div class="section-header mb-4" style="display:block; padding-bottom: 16px; border-bottom: 1px solid var(--border-light);">
+        <label class="form-label fw-bold mb-2" style="font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted);">
+          <i class="bi bi-collection me-1"></i> Select Subject
+        </label>
+        <div class="input-group">
+          <span class="input-group-text" style="background:var(--bg-secondary); border-color:var(--border-light);"><i class="bi bi-journal-bookmark-fill" style="color:var(--primary);"></i></span>
+          <select class="form-select fw-bold" style="background:var(--bg-primary); color:var(--text-primary); border-color:var(--border-light); cursor:pointer; font-size:0.95rem; box-shadow:none; padding-right:32px; appearance:auto; -webkit-appearance:auto; -moz-appearance:auto;" onchange="if(this.value) window.location.href=this.value">
+            {% for c in all_courses %}
+              <option value="{% url 'ai_engine:schedule' c.pk %}" {% if c.id == course.id %}selected{% endif %}>
+                {{ c.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
       </div>
 
       <div class="mb-3">
