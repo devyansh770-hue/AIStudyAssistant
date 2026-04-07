@@ -2,14 +2,19 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from django.contrib.messages import constants as messages_constants
+from django.core.exceptions import ImproperlyConfigured
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1', 't')
+
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key')
-DEBUG = True
-ALLOWED_HOSTS = ['*']
+if not DEBUG and SECRET_KEY == 'django-insecure-dev-key':
+    raise ImproperlyConfigured("The SECRET_KEY must not be the insecure default in production.")
+
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -37,6 +42,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -87,6 +93,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -108,10 +115,21 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_AGE = 1800            # 30 minutes
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_COOKIE_SECURE = False        # True in production
+SESSION_COOKIE_SECURE = not DEBUG        # True in production
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SECURE = not DEBUG
+
+if not DEBUG:
+    # Force HTTPS
+    SECURE_SSL_REDIRECT = True
+    # HTTP Strict Transport Security
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    # For load balancers / reverse proxies
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # ── EMAIL (for OTP) ──
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
