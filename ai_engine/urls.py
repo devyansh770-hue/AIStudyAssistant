@@ -9,6 +9,7 @@ urlpatterns = [
     path('api/questions/',                     views.api_generate_questions,   name='api_questions'),
     path('schedule/<int:course_id>/',          views.view_schedule,            name='schedule'),
     path('api/schedule/toggle-task/',          views.toggle_task_completion,   name='api_toggle_task'),
+    path('api/schedule/delete/<int:history_id>/', views.delete_schedule,        name='delete_schedule'),
     path('global-schedule/',                   views.global_schedule_view,     name='global_schedule'),
     path('chat/<int:course_id>/',              views.tutor_chat_view,          name='chat'),
     path('api/chat/',                          views.api_tutor_chat,           name='api_chat'),

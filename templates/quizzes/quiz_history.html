@@ -96,17 +96,26 @@
 
   {% for a in attempts %}
   <div class="attempt-row d-flex justify-content-between align-items-center">
-    <div>
-      <div class="fw-semibold" style="font-size:0.9rem">
-        <span class="topic-pill">{{ a.topic }}</span>
+    <div class="d-flex align-items-center">
+      <div class="me-3">
+        <span class="badge {% if a.score_percent >= 70 %}bg-success{% elif a.score_percent >= 40 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size:0.9rem;min-width:60px;text-align:center">
+          {{ a.score_percent }}%
+        </span>
       </div>
-      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">
-        {{ a.created_at|date:"M d, Y — H:i" }} · {{ a.time_taken_seconds }}s · {{ a.correct_answers }}/{{ a.total_questions }} correct
+      <div>
+        <div class="fw-semibold" style="font-size:0.9rem">
+          <span class="topic-pill">{{ a.topic }}</span>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">
+          {{ a.created_at|date:"M d, Y — H:i" }} · {{ a.time_taken_seconds }}s · {{ a.correct_answers }}/{{ a.total_questions }} correct
+        </div>
       </div>
     </div>
-    <span class="badge {% if a.score_percent >= 70 %}bg-success{% elif a.score_percent >= 40 %}bg-warning text-dark{% else %}bg-danger{% endif %}" style="font-size:0.9rem;min-width:56px;text-align:center">
-      {{ a.score_percent }}%
-    </span>
+    <div class="d-flex gap-2">
+      <a href="{% url 'quizzes:detail' a.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3">
+        <i class="bi bi-eye"></i> View Results
+      </a>
+    </div>
   </div>
   {% endfor %}
 </div>

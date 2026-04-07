@@ -11,7 +11,7 @@ class RegisterForm(forms.ModelForm):
     password1 = forms.CharField(
         label='Password',
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
+            'class': 'form-control',
             'placeholder': 'Password',
             'id': 'password1'
         })
@@ -19,7 +19,7 @@ class RegisterForm(forms.ModelForm):
     password2 = forms.CharField(
         label='Confirm Password',
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
+            'class': 'form-control',
             'placeholder': 'Confirm Password'
         })
     )
@@ -29,13 +29,14 @@ class RegisterForm(forms.ModelForm):
         fields = ['username', 'email']
         widgets = {
             'username': forms.TextInput(attrs={
-                'class': 'form-input', 'placeholder': 'Username'
+                'class': 'form-control', 'placeholder': 'Username'
             }),
             'email': forms.EmailInput(attrs={
-                'class': 'form-input', 'placeholder': 'Email address'
+                'class': 'form-control', 'placeholder': 'Email address'
             }),
         }
 
+    # ... keep clean methods ...
     def clean_password1(self):
         password = self.cleaned_data.get('password1')
         errors = []
@@ -75,7 +76,7 @@ class OTPForm(forms.Form):
         max_length=6,
         min_length=6,
         widget=forms.TextInput(attrs={
-            'class': 'form-input otp-input',
+            'class': 'form-control otp-input',
             'placeholder': '______',
             'maxlength': '6',
             'autocomplete': 'off',
@@ -92,31 +93,31 @@ class OTPForm(forms.Form):
 
 class LoginForm(AuthenticationForm):
     username = forms.EmailField(widget=forms.EmailInput(attrs={
-        'class': 'form-input', 'placeholder': 'Email address'
+        'class': 'form-control', 'placeholder': 'Email address'
     }))
     password = forms.CharField(widget=forms.PasswordInput(attrs={
-        'class': 'form-input', 'placeholder': 'Password',
+        'class': 'form-control', 'placeholder': 'Password',
         'id': 'loginPassword'
     }))
 
 
 class PasswordResetRequestForm(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
-        'class': 'form-input', 'placeholder': 'Your registered email'
+        'class': 'form-control', 'placeholder': 'Your registered email'
     }))
 
 
 class PasswordResetConfirmForm(forms.Form):
     new_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input',
+            'class': 'form-control',
             'placeholder': 'New Password',
             'id': 'newPassword'
         })
     )
     confirm_password = forms.CharField(
         widget=forms.PasswordInput(attrs={
-            'class': 'form-input', 'placeholder': 'Confirm New Password'
+            'class': 'form-control', 'placeholder': 'Confirm New Password'
         })
     )
 

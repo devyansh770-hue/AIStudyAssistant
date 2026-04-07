@@ -118,6 +118,7 @@ def quiz_submit(request):
             total_questions=total, correct_answers=correct,
             score_percent=score_percent, time_taken_seconds=time_taken,
             is_surprise=is_surprise,
+            results_data=results,
         )
 
         # ── Auto-update Spaced Repetition card ──
@@ -147,6 +148,15 @@ def quiz_submit(request):
     except Exception as e:
         logger.error(f"Error in quiz_submit: {e}", exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def quiz_detail(request, attempt_id):
+    attempt = get_object_or_404(QuizAttempt, pk=attempt_id, user=request.user)
+    return render(request, 'quizzes/quiz_detail.html', {
+        'attempt': attempt,
+        'results': attempt.results_data or [],
+    })
 
 
 @login_required

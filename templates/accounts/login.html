@@ -15,10 +15,10 @@
     body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;-webkit-font-smoothing:antialiased;}
 
     .left-panel{
-      width:55%;
+      width:50%;
       background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0c4a6e 100%);
       display:flex;flex-direction:column;justify-content:center;
-      padding:60px 72px;color:white;
+      padding:40px 60px;color:white;
       position:relative;overflow:hidden;
     }
     .left-panel::before{
@@ -31,7 +31,7 @@
       width:300px;height:300px;border-radius:50%;
       background:rgba(6,182,212,0.08);filter:blur(50px);
     }
-    .brand-logo{display:flex;align-items:center;gap:12px;margin-bottom:40px;position:relative;z-index:1;}
+    .brand-logo{display:flex;align-items:center;gap:12px;margin-bottom:30px;position:relative;z-index:1;}
     .brand-logo-icon{
       width:48px;height:48px;background:linear-gradient(135deg,#6366f1,#06b6d4);
       border-radius:14px;display:flex;align-items:center;justify-content:center;
@@ -44,11 +44,18 @@
     .feature-item:nth-child(3){animation-delay:0.2s;}
     .feature-item:nth-child(4){animation-delay:0.3s;}
     @keyframes slideInFeature{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:translateX(0);}}
-    .feature-icon{width:42px;height:42px;flex-shrink:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
-    .feature-item strong{font-size:0.9rem;font-weight:600;}
-    .feature-item small{color:rgba(255,255,255,0.5);font-size:0.8rem;}
+    .feature-icon{
+      width:42px;height:42px;flex-shrink:0;
+      background:rgba(0,242,254,0.05);
+      border:1px solid rgba(0,242,254,0.2);
+      border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-size:1.1rem;color:#00f2fe;
+      box-shadow:0 0 15px rgba(0,242,254,0.1);
+    }
+    .feature-item strong{font-size:0.95rem;font-weight:600;color:#fff;}
+    .feature-item small{color:rgba(255,255,255,0.6);font-size:0.85rem;line-height:1.4;}
 
-    .right-panel{width:45%;display:flex;align-items:center;justify-content:center;padding:40px;background:#f8fafc;}
+    .right-panel{width:50%;display:flex;align-items:center;justify-content:center;padding:40px;background:#f8fafc;}
     .login-card{border-radius:20px;border:none;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 1px 3px rgba(0,0,0,0.04);width:100%;max-width:420px;background:white;animation:fadeInCard 0.5s ease;}
     @keyframes fadeInCard{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
     .login-card .card-header-area{text-align:center;margin-bottom:24px;}
@@ -83,25 +90,34 @@
 
 <!-- Left Panel -->
 <div class="left-panel">
-  <div class="brand-logo">
+  <div class="brand-logo" style="margin-bottom: 50px;">
     <div class="brand-logo-icon"><i class="bi bi-mortarboard-fill"></i></div>
     <h2>Study<span>AI</span></h2>
   </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-robot"></i></div>
-    <div><strong>AI Tutor</strong><br/><small>Get instant answers to any topic</small></div>
-  </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-    <div><strong>Smart Questions</strong><br/><small>AI-generated practice quizzes</small></div>
-  </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
-    <div><strong>Study Schedule</strong><br/><small>Personalized day-by-day plans</small></div>
-  </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
-    <div><strong>Track Progress</strong><br/><small>Monitor completion and scores</small></div>
+
+  <div class="d-flex align-items-start justify-content-between gap-4">
+    <div style="flex: 1; max-width: 250px;">
+      <div class="feature-item">
+        <div class="feature-icon"><i class="bi bi-robot"></i></div>
+        <div><strong>AI Tutor</strong><br/><small>Get instant answers to any topic</small></div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <div><strong>Smart Questions</strong><br/><small>AI-generated practice quizzes</small></div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
+        <div><strong>Study Schedule</strong><br/><small>Personalized day-by-day plans</small></div>
+      </div>
+      <div class="feature-item" style="margin-bottom: 0;">
+        <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+        <div><strong>Track Progress</strong><br/><small>Monitor completion and scores</small></div>
+      </div>
+    </div>
+    
+    <div class="d-none d-xl-block" style="flex: 0 0 260px; margin-top: 5px;">
+      {% include 'partials/robot.html' %}
+    </div>
   </div>
 </div>
 

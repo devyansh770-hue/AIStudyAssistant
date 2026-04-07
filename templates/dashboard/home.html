@@ -348,7 +348,7 @@
         <table class="table align-middle mb-0">
           <thead>
             <tr>
-              <th>Course</th><th>Topic</th><th>Score</th><th>Q's</th><th>Time</th><th>Date</th>
+              <th>Course</th><th>Topic</th><th>Score</th><th>Q's</th><th>Time</th><th>Date</th><th class="text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -367,6 +367,11 @@
               <td style="color:var(--text-muted);font-size:0.85rem">{{ a.correct_answers }}/{{ a.total_questions }}</td>
               <td style="color:var(--text-muted);font-size:0.85rem">{{ a.time_taken_seconds }}s</td>
               <td style="color:var(--text-muted);font-size:0.85rem">{{ a.created_at|date:"M d, H:i" }}</td>
+              <td class="text-end">
+                <a href="{% url 'quizzes:detail' a.pk %}" class="btn btn-sm btn-outline-info rounded-pill px-3" style="font-size:0.75rem">
+                  <i class="bi bi-eye"></i> View Results
+                </a>
+              </td>
             </tr>
             {% endfor %}
           </tbody>

@@ -301,11 +301,14 @@ function showResults(data) {
     
     <div id="cogLoadSummary" class="mt-4 p-3 text-start mx-auto" style="max-width:320px; background:var(--bg-tertiary); border-radius:12px; font-size:0.85rem; display:none; border:1px solid var(--border-color);"></div>
 
-    <div class="d-flex justify-content-center gap-3 mt-4">
-      <a href="/quizzes/setup/${COURSE_ID}/" class="btn btn-ai px-4">
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+      <a href="/quizzes/detail/${data.attempt_id}/" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">
+        <i class="bi bi-eye"></i> View Detailed Report
+      </a>
+      <a href="/quizzes/attempt/${COURSE_ID}/?topic=${TOPIC}&difficulty=${DIFFICULTY}" class="btn btn-outline-primary px-4 py-2 rounded-pill">
         <i class="bi bi-arrow-repeat"></i> Retake
       </a>
-      <a href="/dashboard/" class="btn btn-outline-secondary px-4" style="border-radius:var(--radius-sm)">
+      <a href="/dashboard/" class="btn btn-outline-secondary px-4 py-2 rounded-pill">
         <i class="bi bi-grid"></i> Dashboard
       </a>
     </div>

@@ -31,6 +31,7 @@ class QuizAttempt(models.Model):
     score_percent = models.FloatField(default=0.0)
     time_taken_seconds = models.IntegerField(default=0)
     is_surprise = models.BooleanField(default=False)
+    results_data = models.JSONField(blank=True, null=True, help_text='Detailed report of answers and explanations')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

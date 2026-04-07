@@ -188,6 +188,30 @@ def toggle_task_completion(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
 
+@login_required
+@require_POST
+def delete_schedule(request, history_id):
+    try:
+        history = get_object_or_404(ScheduleHistory, pk=history_id, course__user=request.user)
+        course = history.course
+        
+        # Check if this is the currently active schedule in Course model
+        is_active = (course.ai_schedule == history.schedule_data)
+        
+        history.delete()
+        
+        # If we deleted the active one, pick the next available from history or clear it
+        if is_active:
+            next_hist = course.schedule_history.first() # newest remaining
+            course.ai_schedule = next_hist.schedule_data if next_hist else None
+            course.save()
+            
+        return JsonResponse({'success': True})
+    except Exception as e:
+        logger.error(f"Delete Schedule Error: {e}", exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
 # ═══════════════════════════════════════════
 #  FEATURE 1: Predictive Exam Score Estimator
 # ═══════════════════════════════════════════

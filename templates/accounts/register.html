@@ -14,10 +14,10 @@
     body{font-family:'Inter',sans-serif;min-height:100vh;display:flex;-webkit-font-smoothing:antialiased;}
 
     .left-panel{
-      width:55%;
+      width:50%;
       background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0c4a6e 100%);
       display:flex;flex-direction:column;justify-content:center;
-      padding:60px 72px;color:white;
+      padding:40px 60px;color:white;
       position:relative;overflow:hidden;
     }
     .left-panel::before{
@@ -32,7 +32,7 @@
     }
 
     .brand-logo{
-      display:flex;align-items:center;gap:12px;margin-bottom:40px;
+      display:flex;align-items:center;gap:12px;margin-bottom:30px;
       position:relative;z-index:1;
     }
     .brand-logo-icon{
@@ -45,7 +45,7 @@
     .brand-logo span{background:linear-gradient(135deg,#a78bfa,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 
     .feature-item{
-      display:flex;align-items:flex-start;gap:14px;margin-bottom:24px;
+      display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;
       position:relative;z-index:1;
       animation:slideIn 0.5s ease both;
     }
@@ -58,15 +58,17 @@
     }
     .feature-icon{
       width:42px;height:42px;flex-shrink:0;
-      background:rgba(255,255,255,0.08);
-      border:1px solid rgba(255,255,255,0.08);
-      border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+      background:rgba(0,242,254,0.05);
+      border:1px solid rgba(0,242,254,0.2);
+      border-radius:12px;display:flex;align-items:center;justify-content:center;
+      font-size:1.1rem;color:#00f2fe;
+      box-shadow:0 0 15px rgba(0,242,254,0.1);
     }
-    .feature-item strong{font-size:0.9rem;font-weight:600;}
-    .feature-item small{color:rgba(255,255,255,0.5);font-size:0.8rem;}
+    .feature-item strong{font-size:0.95rem;font-weight:600;}
+    .feature-item small{color:rgba(255,255,255,0.6);font-size:0.85rem;}
 
     .right-panel{
-      width:45%;display:flex;align-items:center;
+      width:50%;display:flex;align-items:center;
       justify-content:center;padding:40px;
       background:#f8fafc;overflow-y:auto;
     }
@@ -135,25 +137,34 @@
 
 <!-- Left Panel -->
 <div class="left-panel">
-  <div class="brand-logo">
+  <div class="brand-logo" style="margin-bottom: 50px;">
     <div class="brand-logo-icon"><i class="bi bi-mortarboard-fill"></i></div>
     <h2>Study<span>AI</span></h2>
   </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-robot"></i></div>
-    <div><strong>AI Tutor</strong><br/><small>Get instant answers to any topic</small></div>
-  </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-lightning-charge-fill"></i></div>
-    <div><strong>Smart Questions</strong><br/><small>AI-generated practice quizzes</small></div>
-  </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
-    <div><strong>Study Schedule</strong><br/><small>Personalized day-by-day plans</small></div>
-  </div>
-  <div class="feature-item">
-    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-    <div><strong>Secure & Verified</strong><br/><small>OTP email verification</small></div>
+
+  <div class="d-flex align-items-start justify-content-between gap-4">
+    <div style="flex: 1; max-width: 250px;">
+      <div class="feature-item">
+        <div class="feature-icon"><i class="bi bi-robot"></i></div>
+        <div><strong>AI Tutor</strong><br/><small>Get instant answers to any topic</small></div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+        <div><strong>Smart Questions</strong><br/><small>AI-generated practice quizzes</small></div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon"><i class="bi bi-calendar3"></i></div>
+        <div><strong>Study Schedule</strong><br/><small>Personalized day-by-day plans</small></div>
+      </div>
+      <div class="feature-item" style="margin-bottom: 0;">
+        <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+        <div><strong>Secure & Verified</strong><br/><small>OTP email verification</small></div>
+      </div>
+    </div>
+    
+    <div class="d-none d-xl-block" style="flex: 0 0 260px; margin-top: 5px;">
+      {% include 'partials/robot.html' %}
+    </div>
   </div>
 </div>
 
