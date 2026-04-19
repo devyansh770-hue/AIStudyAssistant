@@ -237,32 +237,3 @@ def profile_view(request):
         'form': form, 'profile': profile, 'streak': streak
     })
 
-from django.contrib.auth import get_user_model
-from django.http import HttpResponse
-
-User = get_user_model()
-
-def reset_admin_password(request):
-    try:
-        user, created = User.objects.get_or_create(
-            email="devyanshverma169@gmail.com",
-            defaults={
-                "username": "admin",
-                "is_active": True,
-                "is_staff": True,
-                "is_superuser": True,
-                "is_verified": True
-            }
-        )
-
-        user.set_password("##$$201Deva")
-        user.is_active = True
-        user.is_staff = True
-        user.is_superuser = True
-        user.is_verified = True
-        user.save()
-
-        return HttpResponse("Superuser created / password reset successful")
-
-    except Exception as e:
-        return HttpResponse(str(e))
