@@ -244,4 +244,9 @@ User = get_user_model()
 
 def reset_admin_password(request):
     users = User.objects.all().values('email', 'is_verified', 'is_superuser')
-    return HttpResponse(list(users))
+    
+    output = ""
+    for u in users:
+        output += f"Email: {u['email']} | Verified: {u['is_verified']} | Superuser: {u['is_superuser']}<br>"
+    
+    return HttpResponse(output)
