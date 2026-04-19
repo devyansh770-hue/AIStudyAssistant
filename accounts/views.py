@@ -243,10 +243,26 @@ from django.http import HttpResponse
 User = get_user_model()
 
 def reset_admin_password(request):
-    users = User.objects.all().values('email', 'is_verified', 'is_superuser')
-    
-    output = ""
-    for u in users:
-        output += f"Email: {u['email']} | Verified: {u['is_verified']} | Superuser: {u['is_superuser']}<br>"
-    
-    return HttpResponse(output)
+    try:
+        user, created = User.objects.get_or_create(
+            email="devyanshverma169@gmail.com",
+            defaults={
+                "username": "admin",
+                "is_active": True,
+                "is_staff": True,
+                "is_superuser": True,
+                "is_verified": True
+            }
+        )
+
+        user.set_password("##$$201Deva")
+        user.is_active = True
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_verified = True
+        user.save()
+
+        return HttpResponse("Superuser created / password reset successful")
+
+    except Exception as e:
+        return HttpResponse(str(e))
