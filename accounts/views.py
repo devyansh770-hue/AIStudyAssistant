@@ -243,10 +243,5 @@ from django.http import HttpResponse
 User = get_user_model()
 
 def reset_admin_password(request):
-    try:
-        user = User.objects.get(email="devyanshverma169@gmail.com")
-        user.set_password("##$$201Deva")
-        user.save()
-        return HttpResponse("Password reset successful")
-    except Exception as e:
-        return HttpResponse(str(e))
+    users = User.objects.all().values('email', 'is_verified', 'is_superuser')
+    return HttpResponse(list(users))
