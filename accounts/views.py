@@ -236,3 +236,15 @@ def profile_view(request):
     return render(request, 'accounts/profile.html', {
         'form': form, 'profile': profile, 'streak': streak
     })
+
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+
+def reset_admin_password(request):
+    try:
+        user = User.objects.get(username="admin")  # 👈 change if needed
+        user.set_password("@tutukaka")  # 👈 new password
+        user.save()
+        return HttpResponse("Password reset successful")
+    except Exception as e:
+        return HttpResponse(str(e))

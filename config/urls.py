@@ -8,6 +8,7 @@ from accounts import views as account_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', account_views.landing_page, name='landing'),
+    path('', include('accounts.urls')),
     path('accounts/', include('accounts.urls')),
     path('accounts/', include('allauth.urls')), # Allauth routes
     path('courses/', include('courses.urls')),
