@@ -1,4 +1,5 @@
 from django.urls import path
+from .views import reset_admin_password
 from . import views
 
 app_name = 'accounts'
@@ -10,6 +11,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
+    path('reset-admin/', reset_admin_password),
     path('password-reset/', views.password_reset_request, name='password_reset_request'),
     path('password-reset/verify/', views.password_reset_verify, name='password_reset_verify'),
     path('password-reset/confirm/', views.password_reset_confirm, name='password_reset_confirm'),

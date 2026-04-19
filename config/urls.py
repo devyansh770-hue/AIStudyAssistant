@@ -13,5 +13,6 @@ urlpatterns = [
     path('courses/', include('courses.urls')),
     path('ai/', include('ai_engine.urls')),
     path('quizzes/', include('quizzes.urls')),
+    path('', include('accounts.urls')),  
     path('dashboard/', include('dashboard.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
