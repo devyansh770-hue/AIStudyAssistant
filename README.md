@@ -1,7 +1,5 @@
 # 🚀 StudyAI: Advanced Cognitive Learning Ecosystem
 
-**Developed for the National Level Hackathon 2026** — *Status: Production Ready*
-
 StudyAI is not just another study app; it is a high-performance **AI-Powered Learning Management System (LMS)** designed to optimize student retention through real-time cognitive modeling, heuristic error analysis, and autonomous knowledge extraction.
 
 ---
@@ -74,5 +72,3 @@ python manage.py runserver
 ```
 
 ---
-
-*“Intelligent Systems for a Smarter Future” — Computing & AI Innovation Expo 2026*
