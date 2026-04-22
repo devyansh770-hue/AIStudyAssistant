@@ -222,6 +222,13 @@ def profile_view(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
     streak, _ = StudyStreak.objects.get_or_create(user=request.user)
     if request.method == 'POST':
+        if 'avatar' in request.FILES and len(request.POST) <= 4:
+            # Avatar was uploaded via the crop modal (small form)
+            profile.avatar = request.FILES['avatar']
+            profile.save()
+            messages.success(request, 'Profile photo updated!')
+            return redirect('accounts:profile')
+            
         form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
@@ -230,6 +237,12 @@ def profile_view(request):
                 request.user.username = new_username
                 request.user.save()
             messages.success(request, 'Profile updated!')
+            return redirect('accounts:profile')
+        else:
+            # Handle invalid form
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field.title()}: {error}")
             return redirect('accounts:profile')
     else:
         form = ProfileForm(instance=profile)

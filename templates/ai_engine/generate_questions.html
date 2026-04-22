@@ -195,32 +195,22 @@ function renderQuestions(questions, topic, difficulty, count) {
   </div>`;
 
   questions.forEach((q, i) => {
-    const correctAnswer = q.correct_answer || q.answer;
-
     html += `
     <div class="question-output-card" style="animation-delay:${i * 60}ms">
       <p class="fw-semibold mb-2" style="font-size:0.95rem">${i+1}. ${q.question}</p>
       <div class="row g-2 mb-2">
         ${q.options.map((opt, j) => {
-          const isCorrect = opt.trim() === correctAnswer.trim();
           return `
           <div class="col-md-6">
-            <div class="option-display ${isCorrect ? 'option-correct' : 'option-normal'}">
-              <span class="badge" style="background:${isCorrect ? 'var(--success)' : 'var(--text-muted)'};color:white;font-size:0.7rem;padding:3px 7px;border-radius:5px">
+            <div class="option-display option-normal">
+              <span class="badge" style="background:var(--text-muted);color:white;font-size:0.7rem;padding:3px 7px;border-radius:5px">
                 ${'ABCD'[j]}
               </span>
               <span class="opt-text">${opt}</span>
-              ${isCorrect ? '<i class="bi bi-check-circle-fill ms-auto" style="color:var(--success)"></i>' : ''}
             </div>
           </div>`;
         }).join('')}
       </div>
-      ${q.explanation
-        ? `<div class="explanation-box">
-             <i class="bi bi-lightbulb-fill" style="color:var(--warning)"></i>
-             <strong>Explanation:</strong> ${q.explanation}
-           </div>`
-        : ''}
     </div>`;
   });
 

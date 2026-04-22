@@ -140,12 +140,30 @@ const COURSE_ID  = {{ course.pk }};
 const TOPIC      = "{{ topic }}";
 const DIFFICULTY = "{{ difficulty }}";
 let answers = {};
-let seconds = 0;
+let totalSeconds = questions.length * (DIFFICULTY === 'easy' ? 45 : DIFFICULTY === 'medium' ? 60 : 90);
+let seconds = totalSeconds;
 window._lastInteractionTime = Date.now();
 
 const timerEl = document.getElementById('timer');
-setInterval(() => {
-  seconds++;
+
+// Initial display
+timerEl.textContent = String(Math.floor(seconds/60)).padStart(2,'0') + ':' + String(seconds % 60).padStart(2,'0');
+
+const intervalId = setInterval(() => {
+  seconds--;
+  if (seconds <= 0) {
+    clearInterval(intervalId);
+    timerEl.textContent = "00:00";
+    alert("Time is up! Submitting quiz automatically.");
+    submitQuiz();
+    return;
+  }
+  
+  if (seconds <= 30) {
+    timerEl.classList.add('pulse-danger');
+    timerEl.style.background = '#dc2626';
+  }
+  
   timerEl.textContent =
     String(Math.floor(seconds/60)).padStart(2,'0') + ':' +
     String(seconds % 60).padStart(2,'0');
@@ -264,7 +282,7 @@ async function submitQuiz() {
         course_id: COURSE_ID,
         topic: TOPIC,
         answers: answers,
-        time_taken: seconds
+        time_taken: totalSeconds - seconds
       })
     });
 
