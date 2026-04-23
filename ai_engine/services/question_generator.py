@@ -39,8 +39,12 @@ def generate_questions(topic, course_name, difficulty, count):
             )
         )
         
-        # 3. Return the parsed content or an empty list if nothing is returned
-        return response.parsed if response.parsed else []
+        # 3. Return the parsed content or fallback to raw text parsing
+        if response.parsed:
+            return response.parsed
+        elif response.text:
+            return json.loads(response.text)
+        return []
 
     except Exception as e:
         logger.error(f"Quiz Generation Error: {e}", exc_info=True)
