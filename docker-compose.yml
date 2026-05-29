@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   web:
+    image: ${DOCKER_IMAGE:-studyai_local}
     build: .
     container_name: studyai_web
     ports:
