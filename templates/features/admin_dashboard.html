@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}StudyAI - Patent Metrics Dashboard{% endblock %}
+
+{% block extra_head %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- vis.js for Knowledge Graph -->
+<script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+    .dashboard-container { padding: 2rem; }
+    .metric-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: white;
+    }
+    #kg-network {
+        width: 100%;
+        height: 400px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+    }
+    h2, h3 { color: #f1f1f1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid dashboard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Patent Proof: Administration Dashboard</h2>
+        <button class="btn btn-primary" onclick="window.print()">Export Patent Report</button>
+    </div>
+
+    <div class="row">
+        <!-- System Level Metrics -->
+        <div class="col-md-12">
+            <div class="metric-card d-flex justify-content-around text-center">
+                <div>
+                    <h4>Learning Velocity</h4>
+                    <h2 id="val-velocity">--</h2>
+                    <small>Concepts / Week</small>
+                </div>
+                <div>
+                    <h4>Heuristic Efficiency</h4>
+                    <h2 id="val-efficiency">--%</h2>
+                    <small>Errors caught locally</small>
+                </div>
+                <div>
+                    <h4>API Cost Saved</h4>
+                    <h2 id="val-cost">$--</h2>
+                    <small>Simulated USD</small>
+                </div>
+                <div>
+                    <h4>Time to Exam Readiness</h4>
+                    <h2 id="val-readiness">--</h2>
+                    <small>Weeks Predicted</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Feature 1: Engagement Chart -->
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h3>Feature #1: Adaptive Load / Flow State</h3>
+                <canvas id="engagementChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        
+        <!-- Feature 2: API Cost Efficiency -->
+        <div class="col-md-6">
+            <div class="metric-card">
+                <h3>Feature #2: NLP Heuristic Gate vs LLM</h3>
+                <canvas id="efficiencyChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Feature 3: Knowledge Graph -->
+        <div class="col-md-12">
+            <div class="metric-card">
+                <h3>Feature #3: Autonomous Knowledge Graph</h3>
+                <div id="kg-network"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch("{% url 'features:api_dashboard_data' %}")
+        .then(response => response.json())
+        .then(data => {
+            // Populate Top Bar
+            document.getElementById('val-velocity').innerText = data.system.velocity;
+            document.getElementById('val-efficiency').innerText = data.efficiency.heuristic_rate + '%';
+            document.getElementById('val-cost').innerText = '$' + data.efficiency.cost_saved_usd;
+            document.getElementById('val-readiness').innerText = data.system.exam_readiness_weeks;
+
+            // 1. Engagement Chart
+            const ctxEng = document.getElementById('engagementChart').getContext('2d');
+            new Chart(ctxEng, {
+                type: 'line',
+                data: {
+                    labels: data.engagement.timestamps,
+                    datasets: [
+                        {
+                            label: 'Engagement Score (Target 0.7-0.8)',
+                            data: data.engagement.scores,
+                            borderColor: '#00C851',
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Load Variable L(t)',
+                            data: data.engagement.loads,
+                            borderColor: '#33b5e5',
+                            borderDash: [5, 5],
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    scales: { y: { min: 0, max: 2 } },
+                    plugins: { legend: { labels: { color: 'white' } } }
+                }
+            });
+
+            // 2. Efficiency Chart (Pie)
+            const ctxEff = document.getElementById('efficiencyChart').getContext('2d');
+            new Chart(ctxEff, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Heuristic (Free)', 'LLM (Paid)'],
+                    datasets: [{
+                        data: [data.efficiency.heuristic_rate, data.efficiency.llm_rate],
+                        backgroundColor: ['#00C851', '#ff4444']
+                    }]
+                },
+                options: {
+                    plugins: { legend: { labels: { color: 'white' } } }
+                }
+            });
+
+            // 3. Knowledge Graph (vis.js)
+            const container = document.getElementById('kg-network');
+            const graphData = {
+                nodes: new vis.DataSet(data.knowledge_graph.nodes),
+                edges: new vis.DataSet(data.knowledge_graph.edges)
+            };
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: { size: 16, color: '#ffffff' },
+                    borderWidth: 2
+                },
+                edges: {
+                    width: 2,
+                    color: { color: '#ffffff', opacity: 0.5 }
+                },
+                physics: {
+                    forceAtlas2Based: { gravitationalConstant: -26, centralGravity: 0.005, springLength: 230, springConstant: 0.18 },
+                    maxVelocity: 146,
+                    solver: 'forceAtlas2Based',
+                    timestep: 0.35,
+                    stabilization: { iterations: 150 }
+                }
+            };
+            new vis.Network(container, graphData, options);
+        });
+});
+</script>
+{% endblock %}
