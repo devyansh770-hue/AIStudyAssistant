@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "${env.DOCKER_USERNAME}/studyai:latest"
+        DOCKER_IMAGE = "toto749/studyai:latest"
         COMPOSE_FILE = "docker-compose.yml"
     }
 
