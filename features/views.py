@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from features.models import (
     UserEngagementMetrics,
@@ -10,18 +11,19 @@ from features.models import (
 )
 from features.system_metrics import SystemMetricsAggregator
 
-# @staff_member_required  # Disabled for easier testing, re-enable for prod
+@staff_member_required
 def patent_admin_dashboard(request):
     """
     Renders the 6-part Admin Dashboard required for the patent filing.
     """
     return render(request, 'features/admin_dashboard.html')
 
+@login_required
 def api_dashboard_data(request):
     """
     Provides the JSON data for Chart.js and vis.js to consume.
     """
-    user_id = request.user.id if request.user.is_authenticated else 1
+    user_id = request.user.id
     
     # 1. Engagement Data
     eng_logs = UserEngagementMetrics.objects.all().order_by('-timestamp')[:50]

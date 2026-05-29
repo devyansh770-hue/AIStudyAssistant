@@ -10,13 +10,12 @@ from accounts import views as account_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', account_views.landing_page, name='landing'),
-    path('accounts/', include('accounts.urls')),
-    path('accounts/', include('allauth.urls')), # Allauth routes
+    path('accounts/', include('accounts.urls')),        # Custom accounts
+    path('accounts/', include('allauth.urls')),          # Allauth (OAuth)
     path('courses/', include('courses.urls')),
     path('ai/', include('ai_engine.urls')),
     path('quizzes/', include('quizzes.urls')),
     path('features/', include('features.urls')),
-    path('', include('accounts.urls')),  
     path('dashboard/', include('dashboard.urls')),
 ]
 
