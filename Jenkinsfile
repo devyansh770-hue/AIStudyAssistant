@@ -18,6 +18,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
+                    sh "touch .env"
                     sh "docker-compose -f ${COMPOSE_FILE} down || true"
                     sh "docker-compose -f ${COMPOSE_FILE} up -d"
                 }
