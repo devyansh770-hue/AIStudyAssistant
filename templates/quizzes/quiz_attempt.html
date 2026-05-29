@@ -202,20 +202,21 @@ function escStr(s) {
   return s.replace(/'/g, "\\'").replace(/"/g, '\\"');
 }
 
-function selectAnswer(qIndex, answer, optIndex, qId) {
+async function selectAnswer(qIndex, answer, optIndex, qId) {
+  if (answers[qId]) return; // Prevent multiple submissions for same question
   answers[qId] = answer;
 
   questions[qIndex].options.forEach((_, j) => {
     const el = document.getElementById(`opt-${qIndex}-${j}`);
     el.classList.remove('selected');
+    el.style.pointerEvents = 'none'; // Disable changing answer
   });
 
   const sel = document.getElementById(`opt-${qIndex}-${optIndex}`);
   sel.classList.add('selected');
 
-  document.getElementById(`qstatus-${qIndex}`).textContent = 'Answered ✓';
-  document.getElementById(`qstatus-${qIndex}`).style.color = 'var(--success)';
-
+  document.getElementById(`qstatus-${qIndex}`).textContent = 'Submitting...';
+  
   const done = Object.keys(answers).length;
   const pct  = Math.round((done / questions.length) * 100);
   document.getElementById('progressBar').style.width = pct + '%';
@@ -227,17 +228,65 @@ function selectAnswer(qIndex, answer, optIndex, qId) {
     document.getElementById('submitHint').style.fontWeight = '600';
   }
 
-  // ── Cognitive Load Tracking ──
-  const is_correct = answer.trim().toLowerCase() === questions[qIndex].correct.trim().toLowerCase();
-  const timeTaken = Math.round((Date.now() - window._lastInteractionTime) / 1000);
+  // ── Patent Feature: Real-Time Submission & Cognitive Load Tracking ──
+  const timeTaken = Math.round((Date.now() - window._lastInteractionTime));
   window._lastInteractionTime = Date.now();
   
-  if (window._cogLoadActive !== false) {
-    fetch('/ai/api/cognitive/update/', {
+  try {
+    let csrftoken = getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    const res = await fetch('/quizzes/submit-answer/', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') || document.querySelector('[name=csrfmiddlewaretoken]')?.value },
-      body: JSON.stringify({ is_correct: is_correct, time_taken_seconds: timeTaken, difficulty: DIFFICULTY })
-    }).catch(e => console.log('CogLoad tracking error', e));
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+      body: JSON.stringify({ 
+        session_id: {{ session_id }},
+        question_id: qId,
+        user_response: answer,
+        response_time_ms: timeTaken,
+        session_duration_minutes: (totalSeconds - seconds) / 60.0
+      })
+    });
+    
+    const data = await res.json();
+    
+    // Update Flow State UI (assuming there's an element we can add)
+    let headerBar = document.querySelector('.quiz-header-bar > .d-flex');
+    let flowBadge = document.getElementById('flowStateBadge');
+    if (!flowBadge) {
+        flowBadge = document.createElement('span');
+        flowBadge.id = 'flowStateBadge';
+        flowBadge.className = 'badge bg-info ms-2';
+        headerBar.firstElementChild.appendChild(flowBadge);
+    }
+    
+    if (data.in_flow_zone) {
+        flowBadge.textContent = `Flow State: Optimal 🔥`;
+        flowBadge.className = 'badge bg-success ms-2';
+    } else {
+        flowBadge.textContent = `Load: ${data.difficulty_adjustment.toUpperCase()}`;
+        flowBadge.className = 'badge bg-warning ms-2';
+    }
+
+    if (data.is_correct) {
+        document.getElementById(`qstatus-${qIndex}`).textContent = 'Correct ✓';
+        document.getElementById(`qstatus-${qIndex}`).style.color = 'var(--success)';
+    } else {
+        document.getElementById(`qstatus-${qIndex}`).textContent = 'Incorrect ✕';
+        document.getElementById(`qstatus-${qIndex}`).style.color = 'var(--danger)';
+        sel.style.borderColor = 'var(--danger)';
+        sel.style.backgroundColor = 'rgba(220, 38, 38, 0.1)';
+        
+        // Show AI feedback inline
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'alert alert-danger mt-3 mb-0';
+        feedbackDiv.style.fontSize = '0.9rem';
+        const aiBadge = data.was_explained_by_llm ? '<span class="badge bg-primary">AI</span>' : '<span class="badge bg-secondary">System</span>';
+        feedbackDiv.innerHTML = `<strong>${aiBadge} ${data.error_category}:</strong> ${data.explanation}`;
+        document.getElementById(`qcard-${qIndex}`).appendChild(feedbackDiv);
+    }
+    
+  } catch(e) {
+      console.log('Submission error', e);
+      document.getElementById(`qstatus-${qIndex}`).textContent = 'Answered ✓';
   }
 }
 

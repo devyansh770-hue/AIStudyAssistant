@@ -15,6 +15,7 @@ urlpatterns = [
     path('courses/', include('courses.urls')),
     path('ai/', include('ai_engine.urls')),
     path('quizzes/', include('quizzes.urls')),
+    path('features/', include('features.urls')),
     path('', include('accounts.urls')),  
     path('dashboard/', include('dashboard.urls')),
 ]

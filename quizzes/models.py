@@ -65,3 +65,17 @@ class SurpriseTest(models.Model):
 
     def __str__(self):
         return f"Surprise for {self.user.username} — {self.course.name}"
+
+
+class QuizAnswer(models.Model):
+    session = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    user_response = models.CharField(max_length=300)
+    is_correct = models.BooleanField(default=False)
+    response_time_ms = models.IntegerField(default=3000)
+    engagement_score = models.FloatField(null=True, blank=True)
+    load_variable = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
