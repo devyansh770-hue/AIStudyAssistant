@@ -29,20 +29,8 @@ python-dotenv>=1.0.0
 google-genai>=1.5.0
 google-generativeai>=0.8.0
 
-# Google APIs (letting pip resolve compatible versions)
-google-api-python-client>=2.150.0
-google-auth>=2.35.0
-google-auth-httplib2>=0.2.0
-google-auth-oauthlib>=1.2.0
-google-ai-generativelanguage>=0.6.10
-googleapis-common-protos>=1.63.0
-google-api-core[grpc]>=2.19.0
-proto-plus>=1.24.0
-protobuf>=4.25.0
-
-# gRPC (let pip pick compatible versions for the platform)
-grpcio>=1.60.0
-grpcio-status>=1.60.0
+# Google APIs
+# (Removed manual sub-dependency pins to prevent pip backtracking loops)
 
 # HTTP
 httpx>=0.27.0
