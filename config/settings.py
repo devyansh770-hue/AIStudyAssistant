@@ -242,3 +242,6 @@ LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Bypass intermediate login page
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Send emails (like password reset) to the console since we don't have an SMTP server set up yet
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
