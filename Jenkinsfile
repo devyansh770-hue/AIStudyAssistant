@@ -27,11 +27,11 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    echo "DEBUG=True" > .env
-                    echo "SECRET_KEY=django-insecure-dev-key-for-local-development" >> .env
-                    echo "ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0" >> .env
-                    echo "GEMINI_API_KEY=AIzaSyAXXn4ied-qXu8sMUhSMXJTNsoFnGQYp-w" >> .env
-                    echo "DATABASE_URL=postgresql://postgres.gtantwigqwntegtnllra:%23%23\$\$201Deva@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres" >> .env
+                    echo 'DEBUG=True' > .env
+                    echo 'SECRET_KEY=django-insecure-dev-key-for-local-development' >> .env
+                    echo 'ALLOWED_HOSTS=127.0.0.1,localhost,0.0.0.0' >> .env
+                    echo 'GEMINI_API_KEY=AIzaSyAXXn4ied-qXu8sMUhSMXJTNsoFnGQYp-w' >> .env
+                    echo 'DATABASE_URL=postgresql://postgres.gtantwigqwntegtnllra:%23%23$$201Deva@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres' >> .env
                     '''
                     sh "docker-compose -f ${COMPOSE_FILE} down || true"
                     sh "docker-compose -f ${COMPOSE_FILE} up -d"
