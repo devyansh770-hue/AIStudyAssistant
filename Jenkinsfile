@@ -15,6 +15,14 @@ pipeline {
             }
         }
         
+        stage('Test') {
+            steps {
+                script {
+                    sh "docker run --rm -e SECRET_KEY=dummy-test-key -e DEBUG=True -e DATABASE_URL='' ${DOCKER_IMAGE} python manage.py test"
+                }
+            }
+        }
+        
         stage('Deploy') {
             steps {
                 script {
@@ -27,6 +35,7 @@ pipeline {
                     '''
                     sh "docker-compose -f ${COMPOSE_FILE} down || true"
                     sh "docker-compose -f ${COMPOSE_FILE} up -d"
+                    sh "docker-compose -f ${COMPOSE_FILE} exec -T web python manage.py migrate"
                 }
             }
         }
