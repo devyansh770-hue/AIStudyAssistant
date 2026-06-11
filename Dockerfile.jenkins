@@ -1,0 +1,14 @@
+FROM jenkins/jenkins:lts
+USER root
+
+# Install Docker CLI and docker-compose so Jenkins can run our Jenkinsfile commands
+RUN apt-get update && apt-get install -y \
+    docker.io \
+    docker-compose \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add jenkins user to docker group
+RUN groupadd -f docker && usermod -aG docker jenkins
+
+# Run as root to ensure access to the mounted docker.sock from Windows
+USER root

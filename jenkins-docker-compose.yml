@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: jenkins_server
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home_data:/var/jenkins_home
+      # Mount the Docker socket so Jenkins can spawn containers
+      - //var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home_data:
